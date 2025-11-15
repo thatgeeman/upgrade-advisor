@@ -1,20 +1,26 @@
+
 [project]
-name = "mcp"
+name = "upgrade-advisor"
 version = "0.1.0"
-description = ""
+description = "An AI-powered GitHub App that suggests dependency upgrades for your repositories."
 authors = [
     { name = "thatgeeman", email = "thatgeeman@users.noreply.github.com" },
 ]
 readme = "README.md"
 requires-python = ">=3.10"
-dependencies = ["gradio (>=5.49.1,<6.0.0)"]
+dependencies = [
+    "python-dotenv (>=1.2.1,<2.0.0)",
+    "smolagents[mcp] (>=1.22.0,<2.0.0)",
+    "gradio (>=5.49.1,<6.0.0)",
+    "mcp (>=1.21.1,<2.0.0)",
+    "pytest (>=9.0.1,<10.0.0)",
+]
 
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
 build-backend = "poetry.core.masonry.api"
 
-
 [tool.poetry]
 package-mode = true
-packages = [{ include = "src" }]
+packages = [{ include = "src/upgrade_advisor" }]

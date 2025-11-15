@@ -7,3 +7,6 @@
 *logs
 *.tar
 *__pycache__
+.python-version
+.vscode/
+.pytest_cache/
