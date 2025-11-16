@@ -4,7 +4,7 @@
 
 TO-DO
 
-
+3. Inspector: `npx @modelcontextprotocol/inspector`, accessible at `http://localhost:6274` 
 
 
 ## Running the MCP Server Locally      
@@ -50,3 +50,7 @@ Connecting to `Continue` Extension from VSCode: TODO
         }
     }
 }```
+
+
+
+
