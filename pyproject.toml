@@ -27,5 +27,6 @@ build-backend = "poetry.core.masonry.api"
 package-mode = true
 packages = [{ include = "src/upgrade_advisor" }]
 
+# extend to ruff.toml
 [tool.ruff]
-line-length = 88
+extend = "ruff.toml"
