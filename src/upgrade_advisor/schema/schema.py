@@ -1,6 +1,11 @@
+import logging
 from typing import Dict, List, Optional
 
 from pydantic import BaseModel, Field
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+logger.addHandler(logging.StreamHandler())
 
 
 class PackageInfoSchema(BaseModel):
@@ -77,3 +82,20 @@ class PackageGitHubandReleasesSchema(BaseModel):
 
 class ErrorResponseSchema(BaseModel):
     error: str = Field(..., description="Error message")
+
+
+if __name__ == "__main__":
+    # Example usage
+    example_package_info = PackageInfoSchema(
+        name="example-package",
+        version="1.0.0",
+        author="John Doe",
+        description="An example package for demonstration purposes.",
+    )
+
+    logger.info(
+        f"Example PackageInfoSchema instance: {example_package_info.model_dump()}"
+    )
+
+    logger.info("Schema JSON:")
+    logger.info(PackageInfoSchema.model_json_schema())
