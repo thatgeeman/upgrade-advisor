@@ -26,12 +26,14 @@ def get_package_discovery_prompt(user_input: str) -> str:
 
     NORMALIZE TOOL OUTPUTS BEFORE INDEXING:
     Tool outputs may sometimes be strings representing dicts (e.g., single-quoted) or Pydantic-like objects.
-    Define and use this helper to safely convert to a Python dict before indexing:
+    Define these helpers AT THE TOP of your code block and use them before indexing:
+    `import json, ast, re`
+    Then, use this helper function below `_to_mapping` and `_extract_version_fallback` to convert tool outputs to proper mappings:
 
+    ```python
     def _to_mapping(x):
-        import json, ast
-        # Already a mapping
-        if isinstance(x, dict):
+        # Already a mapping/list
+        if isinstance(x, (dict, list)):
             return x
         # Pydantic v2 model
         if hasattr(x, "model_dump"):
@@ -40,17 +42,26 @@ def get_package_discovery_prompt(user_input: str) -> str:
             except Exception:
                 pass
         # JSON or Python-literal string
-        if isinstance(x, str):
+        for parser in (json.loads, ast.literal_eval):
             try:
-                return json.loads(x)
+                return parser(x)
             except Exception:
-                try:
-                    return ast.literal_eval(x)
-                except Exception:
-                    pass
+                pass
         return x  # as-is if already usable
 
-    ATTENTION: User query to solve:
+    def _extract_version_fallback(text):
+        if not isinstance(text, str):
+            return None
+        m = re.search(r"['\"]version['\"]\\s*:\\s*['\"]([^'\"]+)['\"]", text)
+        return m.group(1) if m else None
+    ```
+
+    - Always call _to_mapping(...) on any tool result BEFORE indexing. Example:
+      d = _to_mapping(PyPI_MCP_pypi_search(package="pandas"))
+      if isinstance(d, dict) and "info" in d and isinstance(d["info"], dict):
+          latest = d["info"].get("version") or _extract_version_fallback(str(d))
+
+    QUESTION:
     {user_input}
 
     SCHEMA DETAILS (use these exact shapes):
@@ -73,6 +84,22 @@ def get_package_discovery_prompt(user_input: str) -> str:
     HINTS:
     - MCP tool outputs are often structured (Python dict/list). Use them directly.
     - If you get a string result, call _to_mapping(result) BEFORE indexing like result["info"].
+    - Also be careful of the types. Some fields may be optional or missing. Some fields are ints/floats.
+    - For version numbers, use the `packaging.version` module.\
+    ```python
+    from packaging.version import parse
+    # 1. Numeric versions that break string comparison
+    print(parse("1.10") > parse("1.2"))
+    # 2. Release vs pre-release
+    print(parse("1.0") > parse("1.0rc1"))
+    # 3. Stable vs beta
+    print(parse("2.0") > parse("2.0b1"))
+    # 4. Different-length segments
+    print(parse("1.2") == parse("1.2.0"))
+    # 5. Dev releases
+    print(parse("3.0.dev2") < parse("3.0"))
+    ```
+    - Never use ast/json modules outside the helpers; import them once at the top and only call _to_mapping / _extract_version_fallback.
     - When you have gathered the required info, call final_answer with the BEST structured object
       that answers the user query according to the appropriate schema.
     """

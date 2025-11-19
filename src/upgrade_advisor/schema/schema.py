@@ -22,7 +22,6 @@ class PackageInfoSchema(BaseModel):
         None, description="List of package dependencies"
     )
     summary: Optional[str] = Field(None, description="Short summary of the package")
-    license: Optional[str] = Field(None, description="License of the package")
     keywords: Optional[str] = Field(
         None, description="Keywords associated with the package"
     )

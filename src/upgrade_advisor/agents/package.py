@@ -161,6 +161,7 @@ class PackageDiscoveryAgent:
                 "re",
                 "typing",
                 "ast",
+                "packaging.version",
             ],
         )
         logger.info(f"PackageDiscoveryAgent initialized with model and tools: {tools}.")
