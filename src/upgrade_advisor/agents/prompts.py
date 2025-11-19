@@ -8,7 +8,17 @@ from ..schema import (
 )
 
 
-def get_package_discovery_prompt(user_input: str) -> str:
+def get_package_discovery_prompt(
+    original_question: str, reframed_question: str = None
+) -> str:
+    user_input = f"""
+    USER QUESTION:
+    {original_question}
+    """
+    if reframed_question:
+        user_input += f"\nREFRAMED QUESTION (LLM-generated):\n{reframed_question}\n"
+
+    # Add the rest of the prompt content here...
     return f"""
     You are a package discovery agent that discovers metadata about
     Python PyPI packages.
@@ -61,7 +71,6 @@ def get_package_discovery_prompt(user_input: str) -> str:
       if isinstance(d, dict) and "info" in d and isinstance(d["info"], dict):
           latest = d["info"].get("version") or _extract_version_fallback(str(d))
 
-    QUESTION:
     {user_input}
 
     SCHEMA DETAILS (use these exact shapes):
@@ -85,20 +94,12 @@ def get_package_discovery_prompt(user_input: str) -> str:
     - MCP tool outputs are often structured (Python dict/list). Use them directly.
     - If you get a string result, call _to_mapping(result) BEFORE indexing like result["info"].
     - Also be careful of the types. Some fields may be optional or missing. Some fields are ints/floats.
-    - For version numbers, use the `packaging.version` module.\
-    ```python
-    from packaging.version import parse
-    # 1. Numeric versions that break string comparison
-    print(parse("1.10") > parse("1.2"))
-    # 2. Release vs pre-release
-    print(parse("1.0") > parse("1.0rc1"))
-    # 3. Stable vs beta
-    print(parse("2.0") > parse("2.0b1"))
-    # 4. Different-length segments
-    print(parse("1.2") == parse("1.2.0"))
-    # 5. Dev releases
-    print(parse("3.0.dev2") < parse("3.0"))
-    ```
+    - Always prefer MCP tool data over web search data for package metadata.
+    - However, If you use the `web_search`, you must only rely on documentation
+    from the official package website, PyPI page, or official GitHub repo.
+    - If the `web_search` tool is used, ALWAYS validate the info with MCP tool data if possible.
+    - NEVER fabricate data. If you cannot find the info, say so.
+    - For parsing version numbers, use the `packaging.version` module. 
     - Never use ast/json modules outside the helpers; import them once at the top and only call _to_mapping / _extract_version_fallback.
     - When you have gathered the required info, call final_answer with the BEST structured object
       that answers the user query according to the appropriate schema.
