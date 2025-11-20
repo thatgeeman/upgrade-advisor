@@ -1,9 +1,9 @@
+import json
 import logging
 from typing import Iterator, Optional
 
 from pydantic import BaseModel
 from smolagents import CodeAgent
-from smolagents.agents import StreamEvent
 from smolagents.mcp_client import MCPClient
 
 from ..schema import (  # noqa
@@ -54,6 +54,7 @@ class PackageDiscoveryAgent:
             add_base_tools=True,
             additional_authorized_imports=[
                 "json",
+                "time",
                 "datetime",
                 "math",
                 "re",
@@ -66,33 +67,65 @@ class PackageDiscoveryAgent:
 
     def _discover_package_info(
         self, user_input: str, reframed_question: str = None
-    ) -> Iterator[StreamEvent]:
-        """Discover package information based on user input.
+    ) -> str:
+        """Discover package information based on user input and return it as text.
 
-        Yields StreamEvent items as the agent runs (planning, action, tool calls,
-        tool outputs, final answer, and streaming deltas). Each yielded event
-        can be normalized further by the caller if needed.
+        The smolagents runtime sometimes returns a dict (structured output),
+        an AgentText (string subclass), or even None. We normalize whatever the
+        agent produces into a string so downstream prompts (and logging) do not
+        crash when attempting to parse the response.
         """
         prompt = get_package_discovery_prompt(user_input, reframed_question)
         logger.info(f"Running agent with max_steps: {self.agent.max_steps}.")
         try:
             result = self.agent.run(task=prompt, max_steps=self.agent.max_steps)
             logger.info(
-                f"Package discovery completed successfully. The return type of result: {type(result)}"
+                f"Package discovery completed successfully. \n"
+                f"The return type of result: {type(result)}"
             )
-            return result
+            return self._normalize_agent_output(result)
 
         except Exception as e:
             logger.error(f"Error discovering package info: {e}")
-            return {
-                "name": "unknown",
-                "version": "unknown",
-                "summary": "Error occurred: " + str(e),
-            }
+            return f"Error occurred while discovering package info: {e}"
+
+    def _normalize_agent_output(self, result) -> str:
+        """Convert smolagents output into a robust string for downstream prompts."""
+        if result is None:
+            return ""
+
+        # Avoid importing json/ast inside the generated code; normalize here instead.
+        try:
+            if hasattr(result, "model_dump"):
+                # Pydantic models or similar objects
+                try:
+                    result = result.model_dump()
+                except Exception:
+                    logger.exception("Failed to dump model; using repr fallback.")
+                    pass
+
+            if isinstance(result, (dict, list)):
+                try:
+                    return json.dumps(result, indent=2, default=str)
+                except Exception:
+                    return str(result)
+
+            if isinstance(result, Iterator) and not isinstance(result, (str, bytes)):
+                # Materialize streaming events or generators
+                materialized = list(result)
+                return self._normalize_agent_output(materialized)
+
+            return str(result)
+        except Exception:
+            logger.exception("Failed to normalize agent output; using repr fallback.")
+            try:
+                return repr(result)
+            except Exception:
+                return ""
 
     def discover_package_info(
         self, user_input: str, reframed_question: str = None
-    ) -> Iterator[StreamEvent]:
+    ) -> str:
         """Public method to start package discovery."""
         return self._discover_package_info(
             user_input, reframed_question=reframed_question
@@ -123,5 +156,7 @@ if __name__ == "__main__":  # Example usage of PackageDiscoveryAgent
     )
 
     user_query = "Discover information about the 'requests' package."
-    for event in package_agent.discover_package_info(user_query):
-        logger.info(f"Agent Event: {event}")
+    logger.info(
+        "Package discovery result:\n%s",
+        package_agent.discover_package_info(user_query),
+    )

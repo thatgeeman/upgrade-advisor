@@ -5,6 +5,7 @@ from mcp import StdioServerParameters
 from smolagents import InferenceClientModel, MCPClient
 
 from config import (
+    AGENT_MODEL,
     CHAT_HISTORY_TURNS_CUTOFF,
     CHAT_HISTORY_WORD_CUTOFF,
     GITHUB_TOOLSETS,
@@ -17,10 +18,45 @@ from src.upgrade_advisor.chat.chat import (
     run_document_qa,
     summarize_chat_history,
 )
+from src.upgrade_advisor.misc import (
+    get_example_pyproject_question,
+    get_example_requirements_question,
+)
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 logger.addHandler(logging.StreamHandler())
+
+
+def _monkeypatch_gradio_save_history():
+    """Guard against non-int indices in Gradio's chat history saver.
+
+    Gradio 5.49.1 occasionally passes a component (e.g., Textbox) as the
+    conversation index when save_history=True, which raises a TypeError. We
+    coerce unexpected index types to None so Gradio inserts a new conversation
+    instead of erroring.
+    """
+    import gradio as gr
+
+    if getattr(gr.ChatInterface, "_ua_safe_patch", False):
+        return
+
+    original = gr.ChatInterface._save_conversation
+
+    def _safe_save_conversation(self, index, conversation, saved_conversations):
+        if not isinstance(index, int):
+            index = None
+        try:
+            return original(self, index, conversation, saved_conversations)
+        except Exception:
+            logger.exception("Failed to save chat history; leaving history unchanged.")
+            return index, saved_conversations
+
+    gr.ChatInterface._save_conversation = _safe_save_conversation
+    gr.ChatInterface._ua_safe_patch = True
+
+
+_monkeypatch_gradio_save_history()
 
 
 async def chat_fn(message, history):
@@ -44,12 +80,10 @@ async def chat_fn(message, history):
         logger.info(f"Using original question: {message}")
         rewritten_message = None
     # Collect events from the agent run
-    events = package_agent.discover_package_info(
+    context = agent.discover_package_info(
         user_input=message, reframed_question=rewritten_message
     )
     # Build a concise context from tool outputs
-    # context = build_context_from_events(events)
-    context = events
     logger.info(f"Built context of length {len(context)}")
     logger.info(f"Context content:\n{context}")
     # Run a document QA pass using the user's question
@@ -100,22 +134,29 @@ if __name__ == "__main__":
             structured_output=True,
         )
 
-        with pypi_mcp_client as pypi_toolset:
+        model = InferenceClientModel(
+            token=HF_TOKEN,
+            model_id=AGENT_MODEL,
+        )
+
+        with pypi_mcp_client as toolset:
             logger.info("MCP clients connected successfully")
 
-            package_agent = PackageDiscoveryAgent(
-                model=InferenceClientModel(token=HF_TOKEN),
-                tools=pypi_toolset,
+            agent = PackageDiscoveryAgent(
+                model=model,
+                tools=toolset,
             )
+            # link package_agent to the chat function
 
             demo = gr.ChatInterface(
                 fn=chat_fn,
-                title="Python Package Discovery Agent",
+                title="Package Upgrade Advisor",
                 type="messages",
                 save_history=True,
                 examples=[
-                    ["Tell me about the 'requests' package."],
-                    ["What is the latest version of 'numpy'?"],
+                    ["Tell me about the 'requests' package. How to use it with JSON ?"],
+                    [get_example_requirements_question()],
+                    [get_example_pyproject_question()],
                     ["Which version of 'pandas' is compatible with 'numpy' 2.0?"],
                 ],
             )

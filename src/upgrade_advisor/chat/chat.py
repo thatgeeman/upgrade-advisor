@@ -4,10 +4,14 @@ import os
 import requests
 from dotenv import load_dotenv
 
+from config import CHAT_MODEL
+
 from .prompts import (
     chat_summarizer_prompt,
+    cynical_tone_system_message,
     query_rewriter_prompt,
     result_package_summary_prompt,
+    rewriter_judge_prompt,
 )
 
 load_dotenv()
@@ -17,14 +21,57 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 logger.addHandler(logging.StreamHandler())
 
+TONE_HEADER = {
+    "role": "developer",
+    "content": cynical_tone_system_message(),
+}
+
 
 async def query(payload):
     API_URL = "https://router.huggingface.co/v1/chat/completions"
     headers = {
         "Authorization": f"Bearer {os.environ['HF_TOKEN']}",
     }
-    response = requests.post(API_URL, headers=headers, json=payload, timeout=300)
+    try:
+        response = requests.post(API_URL, headers=headers, json=payload, timeout=300)
+    except Exception as e:
+        logger.error(f"Error during API request: {e}")
+        raise e
     return response.json()
+
+
+def parse_response(response_json):
+    try:
+        assert "choices" in response_json, "No 'choices' key in response"
+        answer = response_json["choices"][0]["message"]
+        return answer
+    except AssertionError as e:
+        logger.error(f"Assertion error: {e}")
+        return {
+            "role": "assistant",
+            "content": f"""
+                Sorry, I couldn't parse the response from huggingface due to
+                missing data.
+                The API has responded in an unexpected format: {response_json}.
+                Please try again later.
+                """,
+        }
+    except (KeyError, IndexError) as e:
+        logger.error(f"Error parsing response JSON: {e}")
+        return {
+            "role": "assistant",
+            "content": """
+                Sorry, I couldn't process the response from huggingface.
+                The backend service has failed me. Please try again later.""",
+        }
+    except Exception as e:
+        logger.error(f"Unexpected error parsing response JSON: {e}")
+        return {
+            "role": "assistant",
+            "content": """
+                Sorry, I couldn't process your request due to an unexpected error.
+                The backend service has failed me. Please try again later.""",
+        }
 
 
 def extract_answer_content(answer_content: str) -> str:
@@ -49,14 +96,13 @@ async def run_document_qa(
                         original_question=question,
                         rewritten_question=rewritten_question,
                     ),
-                }
+                },
             ],
-            # "model": "Qwen/Qwen3-4B-Thinking-2507",
-            "model": "Qwen/Qwen2.5-Coder-32B-Instruct",
+            "model": CHAT_MODEL,
         }
     )
 
-    answer = response["choices"][0]["message"]
+    answer = parse_response(response)
     return extract_answer_content(answer["content"])
 
 
@@ -66,64 +112,15 @@ async def qn_rewriter_judge(original_question: str, rewritten_question: str) -> 
             "messages": [
                 {
                     "role": "user",
-                    "content": f"""
-                    You are a judge that evaluates whether a rewritten question
-                    captures the intent of the original question.
-                    Note that the rewritten question may include details from
-                    the chat history, but you should focus on whether the core
-                    intent of the original question is preserved. The
-                    additional history context will not change the user's intent, but
-                    may add clarifications.
-                    Return the word "YES" if it does, otherwise "NO". No additional
-                    explanation. Never return anything other than "YES" or "NO".
-
-                    EXAMPLE 1:
-                    `ORIGINAL QUESTION: latest version of nnumpy?`
-                    `REWRITTEN QUESTION: What is the latest version of numpy?`
-                    Answer: YES
-
-                    EXAMPLE 2:
-                    `ORIGINAL QUESTION: Show me the dev docu link of requests
-                    liberary.`
-                    `REWRITTEN QUESTION: Show me the user guide of the requests
-                    library.`
-                    Answer: NO
-
-                    EXAMPLE 3:
-                    `ORIGINAL QUESTION: How to install fapi?`
-                    `REWRITTEN QUESTION: What is the dependency list of fastapi?`
-                    Answer: NO
-
-                    EXAMPLE 4:
-                    `ORIGINAL QUESTION: The user had trouble with a version of
-                    pandas. User tried downgrading to 1.2.0 but it didn't help
-                    and has compatibility issues with other packages like numpy
-                    of version 1.19. What version should I use?`
-                    `REWRITTEN QUESTION: Which version of pandas is most stable
-                    with version 1.19 of numpy?`
-                    Answer: YES
-
-                    EXAMPLE 5:
-                    `ORIGINAL QUESTION: The user is talking about issues with
-                    version 2.0.0 of requests library. They mentioned that it
-                    broke their existing code that worked with version numpy 1.2.3. I
-                    am looking for a version that is compatible.`
-                    `REWRITTEN QUESTION: Which version of requests is compatible
-                    with version numpy 1.2.3?`
-                    Answer: YES
-
-
-                    ORIGINAL QUESTION: {original_question}\n
-                    REWRITTEN QUESTION: {rewritten_question}\n
-                    Answer:
-                    """,
-                }
+                    "content": rewriter_judge_prompt(
+                        original_question, rewritten_question
+                    ),
+                },
             ],
-            # "model": "Qwen/Qwen3-4B-Thinking-2507",
-            "model": "Qwen/Qwen2.5-Coder-32B-Instruct",
+            "model": CHAT_MODEL,
         }
     )
-    answer = response["choices"][0]["message"]
+    answer = parse_response(response)
     answer_text = extract_answer_content(answer["content"])
     logger.info(f"Question Rewriter judge answer: {answer_text}")
     if answer_text.strip().upper() == "YES":
@@ -141,14 +138,13 @@ async def qn_rewriter(original_question: str, summarized_history: str = "") -> s
                     "content": query_rewriter_prompt(
                         original_question, summarized_history
                     ),
-                }
+                },
             ],
-            # "model": "Qwen/Qwen3-4B-Thinking-2507",
-            "model": "Qwen/Qwen2.5-Coder-32B-Instruct",
+            "model": CHAT_MODEL,
         }
     )
 
-    answer = response["choices"][0]["message"]
+    answer = parse_response(response)
     rewritten_question = extract_answer_content(answer["content"])
     is_good = await qn_rewriter_judge(original_question, rewritten_question)
 
@@ -183,13 +179,12 @@ async def summarize_chat_history(
                 {
                     "role": "user",
                     "content": chat_summarizer_prompt(chat_history_text),
-                }
+                },
             ],
-            # "model": "Qwen/Qwen3-4B-Thinking-2507",
-            "model": "Qwen/Qwen2.5-Coder-32B-Instruct",
+            "model": CHAT_MODEL,
         }
     )
 
-    answer = response["choices"][0]["message"]
+    answer = parse_response(response)
     summary = extract_answer_content(answer["content"])
     return summary
