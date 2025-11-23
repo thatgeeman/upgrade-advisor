@@ -1,8 +1,8 @@
 import json
 import logging
-from typing import Iterator, Optional
+from pathlib import Path
+from typing import Iterator
 
-from pydantic import BaseModel
 from smolagents import CodeAgent
 from smolagents.mcp_client import MCPClient
 
@@ -14,28 +14,15 @@ from ..schema import (  # noqa
     PackageVersionResponseSchema,
 )
 from .prompts import get_package_discovery_prompt
+from .tools import ReadUploadFileTool
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 logger.addHandler(logging.StreamHandler())
 logger.addHandler(logging.FileHandler("package_agent.log"))
 
-tool_schemas = {
-    # pypi_search returns full PyPI payload with info + releases
-    "PyPI_MCP_pypi_search": PackageSearchResponseSchema,  # corrected schema
-    "PyPI_MCP_pypi_search_version": PackageVersionResponseSchema,
-    "PyPI_MCP_resolve_repo_from_url": GithubRepoSchema,
-    "PyPI_MCP_github_repo_and_releases": PackageGitHubandReleasesSchema,
-}
 
-
-def map_tool_call_to_schema(tool_name: str) -> Optional[type[BaseModel]]:
-    return tool_schemas.get(tool_name, None)
-
-
-# TODO: The response from the agent is not being properly
-# parsed into the expected schema.
-# See https://github.com/huggingface/smolagents/pull/1660
+UPLOADS_DIR = Path("uploads").resolve()
 
 
 class PackageDiscoveryAgent:
@@ -44,11 +31,16 @@ class PackageDiscoveryAgent:
     def __init__(self, model, tools=None):
         self.model = model
         if tools is None:
-            tools = []
+            tool_list: list = []
             logger.info("No tools provided; initializing with an empty toolset.")
+        else:
+            tool_list = list(tools)
+
+        # additional custom tools
+        tool_list.append(ReadUploadFileTool(upload_root=UPLOADS_DIR))
 
         self.agent = CodeAgent(
-            tools=tools,
+            tools=tool_list,
             model=model,
             max_steps=10,
             add_base_tools=True,
@@ -61,9 +53,18 @@ class PackageDiscoveryAgent:
                 "typing",
                 "ast",
                 "packaging.version",
+                "packaging.specifiers",
+                "packaging.requirements",
+                "markdownify",
+                "sys",
+                "tomli",
+                "requests",
             ],
         )
-        logger.info(f"PackageDiscoveryAgent initialized with model and tools: {tools}.")
+        logger.info(
+            f"""PackageDiscoveryAgent initialized with model and tools: \n
+            {[tool.name for tool in tool_list]}."""
+        )
 
     def _discover_package_info(
         self, user_input: str, reframed_question: str = None

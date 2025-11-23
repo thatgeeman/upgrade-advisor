@@ -14,6 +14,8 @@ def result_package_summary_prompt(
 
     Requirements:
     - Do not add speculation, hedging, or disclaimers.
+    - Do not try to fix numbers, dates, package names, or versions unless
+    they are clearly typos.
     - Do not mention the CONTEXT, your knowledge cutoff, or phrases like "according
       to the provided context."
     - DO NOT refer to the CONTEXT as "context" in your answer, just use

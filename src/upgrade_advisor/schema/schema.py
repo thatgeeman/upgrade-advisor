@@ -83,6 +83,41 @@ class ErrorResponseSchema(BaseModel):
     error: str = Field(..., description="Error message")
 
 
+class ResolvedDep(BaseModel):
+    name: str = Field(..., description="Name of the resolved dependency")
+    version: str = Field(..., description="Version of the resolved dependency")
+    via: List[str] = Field(
+        ..., description="List of packages that required this dependency"
+    )
+
+    metainfo: Optional[str] = Field(
+        None, description="Additional metadata information about the dependency"
+    )
+
+    def update_indirect_dep(self, indirect_dep: str):
+        """Updates the via list with an indirect dependency."""
+        self.via.append(indirect_dep)
+
+
+class ResolveResult(BaseModel):
+    deps: Dict[str, ResolvedDep] = Field(
+        ..., description="Mapping of package names to their resolved dependencies"
+    )
+
+
+class UVResolutionResultSchema(BaseModel):
+    python_version: str = Field(..., description="Python version used for resolution")
+    uv_version: str = Field(
+        ..., description="Version of the uv tool used for resolution"
+    )
+    errored: bool = Field(
+        ..., description="Indicates if there was an error during resolution"
+    )
+    output: ResolveResult = Field(
+        ..., description="Output in validated ResolveResult format"
+    )
+
+
 if __name__ == "__main__":
     # Example usage
     example_package_info = PackageInfoSchema(

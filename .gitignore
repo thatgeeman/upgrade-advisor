@@ -10,3 +10,4 @@
 .python-version
 .vscode/
 .pytest_cache/
+uploads/
