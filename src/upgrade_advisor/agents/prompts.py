@@ -75,9 +75,17 @@ def get_package_discovery_prompt(
     HINTS:
     - MCP tool outputs are often structured (Python dict/list). Use them directly.
     - If you get a string result, make sure to convert it to a Python dict/list before indexing
-    like result["info"].
+    like the result's `info` field.
     - To send pyproject.toml content to the `resolve_environment` tool, you
     will need to use the `upload_file_to_gradio` tool first to upload the file.
+    - The output of `resolve_environment` contains if the compatibility issues.
+    First useful field is `errored` (boolean). If true, check `logs` field for
+    details. The `logs` field contains useful information in any case.
+    - If the user dumps a pyproject.toml content directly, save it to a temp file
+    using the `write_toml_file` tool and then upload it to gradio before passing
+    it to `resolve_environment`. Use triple quotes for the content.
+    - If you need more information about how to write a `pyproject.toml`, use
+    the information from PEP621: https://peps.python.org/pep-0621/
     - Also be careful of the types. Some fields may be optional or missing.
     Some fields are ints/floats.
     - Always prefer MCP tool data over web search data for package metadata.

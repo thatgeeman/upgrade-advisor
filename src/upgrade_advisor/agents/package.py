@@ -1,6 +1,5 @@
 import json
 import logging
-from pathlib import Path
 from typing import Iterator
 
 from smolagents import CodeAgent
@@ -14,15 +13,12 @@ from ..schema import (  # noqa
     PackageVersionResponseSchema,
 )
 from .prompts import get_package_discovery_prompt
-from .tools import ReadUploadFileTool
+from .tools import ReadUploadFileTool, WriteTomlFileTool
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 logger.addHandler(logging.StreamHandler())
 logger.addHandler(logging.FileHandler("package_agent.log"))
-
-
-UPLOADS_DIR = Path("uploads").resolve()
 
 
 class PackageDiscoveryAgent:
@@ -37,7 +33,12 @@ class PackageDiscoveryAgent:
             tool_list = list(tools)
 
         # additional custom tools
-        tool_list.append(ReadUploadFileTool(upload_root=UPLOADS_DIR))
+        tool_list.append(
+            ReadUploadFileTool(),
+        )
+        tool_list.append(
+            WriteTomlFileTool(),
+        )
 
         self.agent = CodeAgent(
             tools=tool_list,

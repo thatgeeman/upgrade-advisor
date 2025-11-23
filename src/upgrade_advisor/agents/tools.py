@@ -1,7 +1,10 @@
 import logging
+import shutil
 from pathlib import Path
 
 from smolagents.tools import Tool
+
+from ..misc import UPLOADS_DIR
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -25,8 +28,8 @@ class ReadUploadFileTool(Tool):
     }
     output_type = "string"
 
-    def __init__(self, upload_root: Path):
-        self.upload_root = upload_root.resolve()
+    def __init__(self):
+        self.upload_root = UPLOADS_DIR
         super().__init__()
 
     def forward(self, path: str) -> str:
@@ -54,3 +57,43 @@ class ReadUploadFileTool(Tool):
             raise IsADirectoryError(f"Refusing to read directory: {resolved}")
 
         return resolved.read_text(encoding="utf-8")
+
+
+class WriteTomlFileTool(Tool):
+    """Tool to write pyproject.toml content to a temp file."""
+
+    name = "write_toml_file"
+    description = """
+        Write the provided pyproject.toml content to a temporary file.
+        Input: `content` is the string content of the pyproject.toml file.
+        Returns the absolute path to the created temporary file."""
+    inputs = {
+        "content": {
+            "type": "string",
+            "description": "The content of the pyproject.toml file to write.",
+        }
+    }
+    output_type = "string"
+
+    def __init__(self):
+        self.upload_root = UPLOADS_DIR
+        super().__init__()
+
+    def forward(self, content: str) -> str:
+        import os
+        import tempfile
+
+        with tempfile.NamedTemporaryFile(
+            mode="w",
+            suffix=".toml",
+            delete=False,  # do not delete so it can be read later
+            encoding="utf-8",
+            dir=f"{self.upload_root}/temp",
+        ) as temp_file:
+            logger.info(
+                f"Temporary directory exists: {os.path.exists(f'{self.upload_root}/temp')}"
+            )
+            temp_file.write(content)
+        shutil.move(temp_file.name, f"{self.upload_root}/temp/pyproject.toml")
+        # return as pyproject.toml
+        return f"{self.upload_root}/temp/pyproject.toml"

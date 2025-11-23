@@ -1,3 +1,8 @@
+from pathlib import Path
+
+UPLOADS_DIR = Path("uploads").resolve()
+
+
 def get_example_requirements_question() -> str:
     return """
     Here are the contents of my requirements file:

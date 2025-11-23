@@ -34,6 +34,8 @@ uploads_dir = Path("uploads")
 uploads_dir.mkdir(exist_ok=True)
 uploads_dir = uploads_dir.resolve()
 
+# TODO: Merge the MCP-PYPI with this.
+
 
 def _monkeypatch_gradio_save_history():
     """Guard against non-int indices in Gradio's chat history saver.
@@ -244,8 +246,8 @@ if __name__ == "__main__":
                     sources="upload",
                     inputs=files_state,
                 ),
-                additional_inputs=[files_state],
-                additional_outputs=[files_state],
+                # additional_inputs=[files_state],
+                additional_outputs=files_state,
                 save_history=True,
                 examples=[
                     ["Tell me about the 'requests' package. How to use it with JSON ?"],
