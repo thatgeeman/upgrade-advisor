@@ -1,12 +1,8 @@
 import logging
-from pathlib import Path
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 logger.addHandler(logging.StreamHandler())
-
-
-UPLOADS_DIR = Path("uploads").resolve()
 
 
 def get_example_requirements_question() -> str:

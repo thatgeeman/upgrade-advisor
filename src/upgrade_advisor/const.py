@@ -1,3 +1,5 @@
+from pathlib import Path
+
 ALLOWED_OS = (
     "windows",
     "linux",
@@ -47,3 +49,4 @@ ALLOWED_OS = (
 )
 
 UV_VERSION = "0.9.11"
+UPLOADS_DIR = Path("uploads").resolve()
