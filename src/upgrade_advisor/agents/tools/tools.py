@@ -96,13 +96,6 @@ class WriteTomlFileTool(Tool):
     }
     output_type = "string"
 
-    output_schema = """
-        {
-            "type": "string",
-            "description": "Absolute path to the written temporary pyproject.toml file."
-        }
-        """
-
     def __init__(self):
         self.upload_root = UPLOADS_DIR
         self.temp_dir = self.upload_root / "temp"
@@ -141,7 +134,7 @@ class ResolvePyProjectTOMLTool(Tool):
         It returns a dictionary with the schema described in `output_schema` attribute.
         """
 
-    output_schema = UVResolutionResultSchema.schema_json()
+    output_schema = UVResolutionResultSchema.schema()
     output_type = "object"
     inputs = {
         "toml_file": {
@@ -206,12 +199,12 @@ class PypiSearchTool(Tool):
         },
     }
     output_type = "object"
-    output_schema = PackageSearchResponseSchema.schema_json()
+    output_schema = PackageSearchResponseSchema.schema()
 
     def __init__(self):
         super().__init__()
 
-    def forward(self, package: str, cutoff: int = 10) -> dict:
+    def forward(self, package: str, cutoff: int) -> dict:
         result = pypi_search(package, cutoff=cutoff)
         return result
 
@@ -239,17 +232,17 @@ class PypiSearchVersionTool(Tool):
         },
     }
     output_type = "object"
-    output_schema = PackageVersionResponseSchema.schema_json()
+    output_schema = PackageVersionResponseSchema.schema()
 
     def __init__(self):
         super().__init__()
 
-    def forward(self, package: str, version: str, cutoff: int = 10) -> dict:
+    def forward(self, package: str, version: str, cutoff: int) -> dict:
         result = pypi_search_version(package, version, cutoff=cutoff)
         return result
 
 
-class RepoFromURL(Tool):
+class RepoFromURLTool(Tool):
     """Tool to extract GitHub repository information from a URL."""
 
     name = "repo_from_url"
@@ -265,7 +258,7 @@ class RepoFromURL(Tool):
         }
     }
     output_type = "object"
-    output_schema = GithubRepoSchema.schema_json()
+    output_schema = GithubRepoSchema.schema()
 
     def __init__(self):
         super().__init__()
@@ -276,7 +269,7 @@ class RepoFromURL(Tool):
         return result
 
 
-class RepoFromPyPI(Tool):
+class RepoFromPyPITool(Tool):
     """Tool to extract GitHub repository information from a PyPI package."""
 
     name = "repo_from_pypi"
@@ -300,12 +293,12 @@ class RepoFromPyPI(Tool):
         },
     }
     output_type = "object"
-    output_schema = PackageGitHubandReleasesSchema.schema_json()
+    output_schema = PackageGitHubandReleasesSchema.schema()
 
     def __init__(self):
         super().__init__()
 
-    def forward(self, package: str, cutoff: int = 10) -> dict:
+    def forward(self, package: str, cutoff: int) -> dict:
         result = github_repo_and_releases(package, cutoff=cutoff)
 
         return result

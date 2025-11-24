@@ -17,8 +17,8 @@ from .tools import (
     PypiSearchTool,
     PypiSearchVersionTool,
     ReadUploadFileTool,
-    RepoFromPyPI,
-    RepoFromUrlTool,
+    RepoFromPyPITool,
+    RepoFromURLTool,
     ResolvePyProjectTOMLTool,
     WriteTomlFileTool,
 )
@@ -48,8 +48,8 @@ class PackageDiscoveryAgent:
                 ResolvePyProjectTOMLTool(),
                 PypiSearchTool(),
                 PypiSearchVersionTool(),
-                RepoFromUrlTool(),
-                RepoFromPyPI(),
+                RepoFromURLTool(),
+                RepoFromPyPITool(),
             ]
         )
         logger.info("Custom tools added to the agent.")
