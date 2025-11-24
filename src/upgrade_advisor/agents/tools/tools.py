@@ -186,9 +186,7 @@ class PypiSearchTool(Tool):
     name = "pypi_search"
     description = """
         Get metadata about a PyPI package by its name.
-        It returns a dictionary with the schema described in `output_schema`
-        attribute.
-        This is an async tool, so make sure to await its execution.
+        It returns a dictionary with the schema described in `output_schema` attribute.
         """
     inputs = {
         "package": {
@@ -217,9 +215,7 @@ class PypiSearchVersionTool(Tool):
     name = "pypi_search_version"
     description = """
         Get metadata about a specific version of a PyPI package. 
-        It returns a dictionary with the schema described in `output_schema`
-        attribute.
-        This is an async tool, so make sure to await its execution.
+        It returns a dictionary with the schema described in `output_schema` attribute.
         """
     inputs = {
         "package": {
@@ -284,9 +280,7 @@ class RepoFromPyPITool(Tool):
         PyPI.
         Some projects may not have a GitHub repository listed in their PyPI
         metadata.
-        It returns a dictionary with the schema described in `output_schema`
-        attribute.
-        This is an async tool, so make sure to await its execution.
+        It returns a dictionary with the schema described in `output_schema` attribute.
         """
     inputs = {
         "package": {
