@@ -46,6 +46,8 @@ Connecting to `Continue` Extension from VSCode: TODO
             ],
             "env": {
                 "GITHUB_PERSONAL_ACCESS_TOKEN": "${input:github_token}"
+                "GITHUB_READ_ONLY": "1",
+                "GITHUB_TOOLSETS": "default",
             }
         }
     }

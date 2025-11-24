@@ -8,7 +8,6 @@ from config import CHAT_MODEL
 
 from .prompts import (
     chat_summarizer_prompt,
-    cynical_tone_system_message,
     query_rewriter_prompt,
     result_package_summary_prompt,
     rewriter_judge_prompt,
@@ -20,11 +19,6 @@ load_dotenv()
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 logger.addHandler(logging.StreamHandler())
-
-TONE_HEADER = {
-    "role": "developer",
-    "content": cynical_tone_system_message(),
-}
 
 
 async def query(payload):

@@ -10,10 +10,11 @@ from config import (
     AGENT_MODEL,
     CHAT_HISTORY_TURNS_CUTOFF,
     CHAT_HISTORY_WORD_CUTOFF,
+    GITHUB_PAT,
+    GITHUB_READ_ONLY,
     GITHUB_TOOLSETS,
     HF_TOKEN,
 )
-from config import GITHUB_PAT as GITHUB_TOKEN
 from src.upgrade_advisor.agents.package import PackageDiscoveryAgent
 from src.upgrade_advisor.chat.chat import (
     qn_rewriter,
@@ -21,9 +22,11 @@ from src.upgrade_advisor.chat.chat import (
     summarize_chat_history,
 )
 from src.upgrade_advisor.misc import (
+    _monkeypatch_gradio_save_history,
     get_example_pyproject_question,
     get_example_requirements_question,
 )
+from src.upgrade_advisor.theme import christmas
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -33,37 +36,6 @@ logger.addHandler(logging.StreamHandler())
 uploads_dir = Path("uploads")
 uploads_dir.mkdir(exist_ok=True)
 uploads_dir = uploads_dir.resolve()
-
-# TODO: Merge the MCP-PYPI with this.
-
-
-def _monkeypatch_gradio_save_history():
-    """Guard against non-int indices in Gradio's chat history saver.
-
-    Gradio 5.49.1 occasionally passes a component (e.g., Textbox) as the
-    conversation index when save_history=True, which raises a TypeError. We
-    coerce unexpected index types to None so Gradio inserts a new conversation
-    instead of erroring.
-    """
-    import gradio as gr
-
-    if getattr(gr.ChatInterface, "_ua_safe_patch", False):
-        return
-
-    original = gr.ChatInterface._save_conversation
-
-    def _safe_save_conversation(self, index, conversation, saved_conversations):
-        if not isinstance(index, int):
-            index = None
-        try:
-            return original(self, index, conversation, saved_conversations)
-        except Exception:
-            logger.exception("Failed to save chat history; leaving history unchanged.")
-            return index, saved_conversations
-
-    gr.ChatInterface._save_conversation = _safe_save_conversation
-    gr.ChatInterface._ua_safe_patch = True
-
 
 _monkeypatch_gradio_save_history()
 
@@ -160,33 +132,20 @@ if __name__ == "__main__":
     logger.info("Starting MCP client...")
 
     try:
-        gh_mcp_params = StdioServerParameters(
-            # for StdioServerParameters, we use podman to run the
-            # MCP server from GH in a container
-            command="podman",
-            args=[
-                "run",
-                "-i",
-                "--rm",
-                "-e",
-                "GITHUB_PERSONAL_ACCESS_TOKEN",
-                "-e",
-                "GITHUB_READ_ONLY",
-                "-e",
-                "GITHUB_TOOLSETS",
-                "ghcr.io/github/github-mcp-server",
-            ],
-            env={
-                "GITHUB_PERSONAL_ACCESS_TOKEN": GITHUB_TOKEN,
-                "GITHUB_READ_ONLY": "1",
-                "GITHUB_TOOLSETS": GITHUB_TOOLSETS,
+        gh_mcp_params = dict(
+            url="https://api.githubcopilot.com/mcp/",
+            transport="streamable-http",
+            headers={
+                "Authorization": f"Bearer {GITHUB_PAT}",
+                "X-MCP-Toolsets": GITHUB_TOOLSETS,
+                "X-MCP-Readonly": GITHUB_READ_ONLY,
             },
         )
-        pypi_mcp_params = dict(
-            # url="https://mcp-1st-birthday-pypi-mcp.hf.space/gradio_api/mcp/",
-            url="https://mcp-1st-birthday-uv-pypi-mcp.hf.space/gradio_api/mcp/",
-            transport="streamable-http",
-        )
+        # pypi_mcp_params = dict(
+        #     # url="https://mcp-1st-birthday-pypi-mcp.hf.space/gradio_api/mcp/",
+        #     url="https://mcp-1st-birthday-uv-pypi-mcp.hf.space/gradio_api/mcp/",
+        #     transport="streamable-http",
+        # )
         upload_mcp_params = StdioServerParameters(
             command="uvx",
             args=[
@@ -204,7 +163,7 @@ if __name__ == "__main__":
 
         pypi_mcp_client = MCPClient(
             server_parameters=[
-                pypi_mcp_params,
+                # pypi_mcp_params,
                 gh_mcp_params,
                 upload_mcp_params,
             ],
@@ -265,7 +224,7 @@ if __name__ == "__main__":
                     ],
                 ],
                 stop_btn=True,
-                theme="compact",
+                theme=christmas,
             )
             demo.launch()
 
@@ -273,9 +232,14 @@ if __name__ == "__main__":
         logger.info("Cleaning up MCP client resources")
         # remove contents of uploads_dir
         for f in uploads_dir.iterdir():
-            try:
-                f.unlink()
-            except Exception:
-                logger.exception(f"Failed to delete uploaded file: {f}")
-
+            if f.is_dir():
+                try:
+                    shutil.rmtree(f)
+                except Exception:
+                    logger.exception(f"Failed to delete uploaded directory: {f}")
+            else:
+                try:
+                    f.unlink()
+                except Exception:
+                    logger.exception(f"Failed to delete uploaded file: {f}")
         logger.info("Shutdown complete.")

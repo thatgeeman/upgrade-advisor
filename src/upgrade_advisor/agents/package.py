@@ -13,7 +13,15 @@ from ..schema import (  # noqa
     PackageVersionResponseSchema,
 )
 from .prompts import get_package_discovery_prompt
-from .tools import ReadUploadFileTool, WriteTomlFileTool
+from .tools import (
+    PypiSearchTool,
+    PypiSearchVersionTool,
+    ReadUploadFileTool,
+    RepoFromPyPI,
+    RepoFromUrlTool,
+    ResolvePyProjectTOMLTool,
+    WriteTomlFileTool,
+)
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -28,17 +36,23 @@ class PackageDiscoveryAgent:
         self.model = model
         if tools is None:
             tool_list: list = []
-            logger.info("No tools provided; initializing with an empty toolset.")
+            logger.info("No custom tools provided; initializing with an empty toolset.")
         else:
             tool_list = list(tools)
 
         # additional custom tools
-        tool_list.append(
-            ReadUploadFileTool(),
+        tool_list.extend(
+            [
+                ReadUploadFileTool(),
+                WriteTomlFileTool(),
+                ResolvePyProjectTOMLTool(),
+                PypiSearchTool(),
+                PypiSearchVersionTool(),
+                RepoFromUrlTool(),
+                RepoFromPyPI(),
+            ]
         )
-        tool_list.append(
-            WriteTomlFileTool(),
-        )
+        logger.info("Custom tools added to the agent.")
 
         self.agent = CodeAgent(
             tools=tool_list,

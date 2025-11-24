@@ -17,7 +17,7 @@ if not HF_TOKEN:
     print("⚠️ Hugging Face token not found in .env file!")
 
 GITHUB_TOOLSETS = os.getenv("GITHUB_TOOLSETS", "repos")
-
+GITHUB_READ_ONLY = os.getenv("GITHUB_READ_ONLY", "1")
 
 # Server configuration
 GRADIO_SERVER_NAME = os.getenv("GRADIO_SERVER_NAME", "0.0.0.0")

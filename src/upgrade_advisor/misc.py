@@ -1,4 +1,10 @@
+import logging
 from pathlib import Path
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+logger.addHandler(logging.StreamHandler())
+
 
 UPLOADS_DIR = Path("uploads").resolve()
 
@@ -42,3 +48,31 @@ def get_example_pyproject_question() -> str:
     Help me identify any potential package upgrade issues.
     I wish to upgrade numpy to version 1.23.0 and pandas to version 1.5.0.
     """
+
+
+def _monkeypatch_gradio_save_history():
+    """Guard against non-int indices in Gradio's chat history saver.
+
+    Gradio 5.49.1 occasionally passes a component (e.g., Textbox) as the
+    conversation index when save_history=True, which raises a TypeError. We
+    coerce unexpected index types to None so Gradio inserts a new conversation
+    instead of erroring.
+    """
+    import gradio as gr
+
+    if getattr(gr.ChatInterface, "_ua_safe_patch", False):
+        return
+
+    original = gr.ChatInterface._save_conversation
+
+    def _safe_save_conversation(self, index, conversation, saved_conversations):
+        if not isinstance(index, int):
+            index = None
+        try:
+            return original(self, index, conversation, saved_conversations)
+        except Exception:
+            logger.exception("Failed to save chat history; leaving history unchanged.")
+            return index, saved_conversations
+
+    gr.ChatInterface._save_conversation = _safe_save_conversation
+    gr.ChatInterface._ua_safe_patch = True

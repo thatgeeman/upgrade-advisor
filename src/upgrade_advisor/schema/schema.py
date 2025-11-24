@@ -116,6 +116,7 @@ class UVResolutionResultSchema(BaseModel):
     output: ResolveResult = Field(
         ..., description="Output in validated ResolveResult format"
     )
+    logs: str = Field(..., description="Raw logs from the uv pip compile command")
 
 
 if __name__ == "__main__":
