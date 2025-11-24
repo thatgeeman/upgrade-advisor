@@ -40,14 +40,14 @@ class Christmas(Base):
         )
         super().set(
             body_background_fill=(
-                "radial-gradient(#ffffff 2px, transparent 2px) 0 0/26px 26px, "
-                "radial-gradient(#ef4444 2px, transparent 2px) 13px 13px/26px 26px, "
-                "#0f2a1d"
+                "radial-gradient(rgba(255, 255, 255, 0.6) 2px, transparent 2px) 0 0/26px 26px, "
+                "radial-gradient(rgba(239, 68, 68, 0.55) 2px, transparent 2px) 13px 13px/26px 26px, "
+                "rgba(15, 42, 29, 0.92)"
             ),
             body_background_fill_dark=(
-                "radial-gradient(#f3f4f6 2px, transparent 2px) 0 0/26px 26px, "
-                "radial-gradient(#f87171 2px, transparent 2px) 13px 13px/26px 26px, "
-                "#05140d"
+                "radial-gradient(rgba(243, 244, 246, 0.52) 2px, transparent 2px) 0 0/26px 26px, "
+                "radial-gradient(rgba(248, 113, 113, 0.48) 2px, transparent 2px) 13px 13px/26px 26px, "
+                "rgba(5, 20, 13, 0.94)"
             ),
             background_fill_primary="rgba(255, 255, 255, 0.92)",
             background_fill_primary_dark="rgba(12, 22, 17, 0.9)",
@@ -71,9 +71,9 @@ class Christmas(Base):
             block_title_text_color_dark="*primary_100",
             block_title_text_weight="700",
             button_primary_background_fill="linear-gradient(120deg, *primary_500, #f59e0b 80%)",
-            button_primary_background_fill_hover="linear-gradient(120deg, *primary_400, #fbbf24 80%)",
+            button_primary_background_fill_hover="linear-gradient(120deg, #34d399, #bbf7d0 80%)",
             button_primary_background_fill_dark="linear-gradient(120deg, *primary_600, #d97706 80%)",
-            button_primary_background_fill_hover_dark="linear-gradient(120deg, *primary_500, #f59e0b 80%)",
+            button_primary_background_fill_hover_dark="linear-gradient(120deg, #10b981, #34d399 80%)",
             button_primary_text_color="white",
             button_primary_text_color_dark="white",
             button_primary_shadow="0 10px 40px rgba(0, 0, 0, 0.25)",

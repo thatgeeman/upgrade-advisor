@@ -57,7 +57,7 @@ class PackageDiscoveryAgent:
         self.agent = CodeAgent(
             tools=tool_list,
             model=model,
-            max_steps=10,
+            max_steps=20,
             add_base_tools=True,
             additional_authorized_imports=[
                 "json",
@@ -73,7 +73,8 @@ class PackageDiscoveryAgent:
                 "markdownify",
                 "sys",
                 "tomli",
-                "requests",
+                # "requests",
+                "asyncio",
             ],
         )
         logger.info(

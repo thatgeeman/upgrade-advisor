@@ -31,11 +31,11 @@ async def pypi_search(
         dict: Parsed package metadata or an error payload.
     """
     REQUEST_URL = f"https://pypi.python.org/pypi/{package}/json"
+
     response = requests.get(REQUEST_URL, timeout=10)
     if response.ok:
         result = parse_response_pypi_search(response.json(), cutoff=cutoff)
         return result.model_dump()
-
     e = HTTPError(str(response.status_code))
     return ErrorResponseSchema(error=str(e)).model_dump()
 
