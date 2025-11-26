@@ -1,8 +1,6 @@
-import asyncio
 import logging
 import shutil
 from pathlib import Path
-from typing import Any
 
 from smolagents.tools import Tool
 
@@ -15,6 +13,7 @@ from src.upgrade_advisor.schema import (
     UVResolutionResultSchema,
 )
 
+from ...misc import run_coro_sync
 from .pypi_api import (
     github_repo_and_releases,
     pypi_search,
@@ -26,55 +25,6 @@ from .uv_resolver import resolve_environment
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 logger.addHandler(logging.StreamHandler())
-
-
-class AsyncTool(Tool):
-    """A least-effort base class for defining an asynchronous tool.
-
-    Improvements that can be made:
-    - Timeout handling for async tasks.
-    - Cancellation support for long-running tasks.
-    """
-
-    loop = asyncio.get_event_loop()
-    task = None
-
-    async def forward(self) -> Any:
-        raise NotImplementedError(
-            "AsyncTool subclasses must implement the forward method."
-        )
-
-    def async_forward(self, *args, **kwargs) -> Any:
-        self.task = asyncio.create_task(self.forward(*args, **kwargs))
-        try:
-            # call the async forward method and wait for result
-            return self.loop.run_until_complete(self.task)
-        except asyncio.CancelledError as e:
-            logger.error(f"Tool {self.name} execution was cancelled: {e}")
-            raise e
-        except Exception as e:
-            logger.error(f"Error in tool {self.name} execution: {e}")
-            raise e
-        finally:
-            logger.info(f"Tool {self.name} execution completed.")
-
-    def _inspect_args(self):
-        import inspect
-
-        sig = inspect.signature(self.forward)
-        bound = sig.bind_partial()
-        return bound.args, bound.kwargs
-
-    def __call__(self, *args, **kwargs):
-        """Stripped down call method to support async forward calls."""
-        if not self.is_initialized:
-            self.setup()
-        encoded_inputs = self.encode(*args, **kwargs)
-        # call async forward instead of forward
-        # we could aalso just await here, but this way we can have a sync interface
-        outputs = self.async_forward({**encoded_inputs})
-        decoded_outputs = self.decode(outputs)
-        return decoded_outputs
 
 
 class ReadUploadFileTool(Tool):
@@ -138,6 +88,9 @@ class WriteTomlFileTool(Tool):
         pyproject.toml file before resolving dependencies.
         Also useful if the user cannot upload files directly or if the uploaded
         file has missing sections or formatting issues.
+        If the user has provided a requirements.txt file instead of a pyproject.toml,
+        this tool can be used to convert the requirements.txt content into a
+        minimal pyproject.toml file. But make sure to follow the PEP621 format.
         """
     inputs = {
         "content": {
@@ -231,68 +184,6 @@ class ResolvePyProjectTOMLTool(Tool):
         return result
 
 
-class PypiSearchTool(AsyncTool):
-    """Tool to search PyPI for package metadata."""
-
-    name = "pypi_search"
-    description = """
-        Get metadata about a PyPI package by its name.
-        It returns a dictionary with the schema described in `output_schema` attribute.
-        """
-    inputs = {
-        "package": {
-            "type": "string",
-            "description": "Name of the package to look up on PyPI.",
-        },
-        "cutoff": {
-            "type": "integer",
-            "description": "The maximum number of releases to include in the response. Defaults to 10.",
-        },
-    }
-    output_type = "object"
-    output_schema = PackageSearchResponseSchema.schema()
-
-    def __init__(self):
-        super().__init__()
-
-    async def forward(self, package: str, cutoff: int) -> dict:
-        result = await pypi_search(package, cutoff=cutoff)
-        return result
-
-
-class PypiSearchVersionTool(AsyncTool):
-    """Tool to search PyPI for specific package version metadata."""
-
-    name = "pypi_search_version"
-    description = """
-        Get metadata about a specific version of a PyPI package. 
-        It returns a dictionary with the schema described in `output_schema` attribute.
-        """
-    inputs = {
-        "package": {
-            "type": "string",
-            "description": "Name of the package to look up on PyPI.",
-        },
-        "version": {
-            "type": "string",
-            "description": "Version number of the released package.",
-        },
-        "cutoff": {
-            "type": "integer",
-            "description": "The maximum number of URLs to include in the response from the end of the list. Defaults to 10.",
-        },
-    }
-    output_type = "object"
-    output_schema = PackageVersionResponseSchema.schema()
-
-    def __init__(self):
-        super().__init__()
-
-    async def forward(self, package: str, version: str, cutoff: int) -> dict:
-        result = await pypi_search_version(package, version, cutoff=cutoff)
-        return result
-
-
 class RepoFromURLTool(Tool):
     """Tool to extract GitHub repository information from a URL."""
 
@@ -320,7 +211,72 @@ class RepoFromURLTool(Tool):
         return result
 
 
-class RepoFromPyPITool(AsyncTool):
+class PypiSearchTool(Tool):
+    """Tool to search PyPI for package metadata."""
+
+    name = "pypi_search"
+    description = """
+        Get metadata about a PyPI package by its name.
+        It returns a dictionary with the schema described in `output_schema` attribute.
+        """
+    inputs = {
+        "package": {
+            "type": "string",
+            "description": "Name of the package to look up on PyPI.",
+        },
+        "cutoff": {
+            "type": "integer",
+            "description": "The maximum number of releases to include in the response. Defaults to 10.",
+        },
+    }
+    output_type = "object"
+    output_schema = PackageSearchResponseSchema.schema()
+
+    def __init__(self):
+        super().__init__()
+
+    def forward(self, package: str, cutoff: int) -> dict:
+        coro = pypi_search(package, cutoff=cutoff)
+        result = run_coro_sync(coro)
+
+        return result
+
+
+class PypiSearchVersionTool(Tool):
+    """Tool to search PyPI for specific package version metadata."""
+
+    name = "pypi_search_version"
+    description = """
+        Get metadata about a specific version of a PyPI package. 
+        It returns a dictionary with the schema described in `output_schema` attribute.
+        """
+    inputs = {
+        "package": {
+            "type": "string",
+            "description": "Name of the package to look up on PyPI.",
+        },
+        "version": {
+            "type": "string",
+            "description": "Version number of the released package.",
+        },
+        "cutoff": {
+            "type": "integer",
+            "description": "The maximum number of URLs to include in the response from the end of the list. Defaults to 10.",
+        },
+    }
+    output_type = "object"
+    output_schema = PackageVersionResponseSchema.schema()
+
+    def __init__(self):
+        super().__init__()
+
+    def forward(self, package: str, version: str, cutoff: int) -> dict:
+        coro = pypi_search_version(package, version, cutoff=cutoff)
+        result = run_coro_sync(coro)
+        return result
+
+
+class RepoFromPyPITool(Tool):
     """Tool to extract GitHub repository information from a PyPI package."""
 
     name = "repo_from_pypi"
@@ -349,7 +305,8 @@ class RepoFromPyPITool(AsyncTool):
     def __init__(self):
         super().__init__()
 
-    async def forward(self, package: str, cutoff: int) -> dict:
-        result = await github_repo_and_releases(package, cutoff=cutoff)
+    def forward(self, package: str, cutoff: int) -> dict:
+        coro = github_repo_and_releases(package, cutoff=cutoff)
+        result = run_coro_sync(coro)
 
         return result

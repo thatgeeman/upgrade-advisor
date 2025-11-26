@@ -4,9 +4,9 @@ from pathlib import Path
 
 import gradio as gr
 from mcp import StdioServerParameters
-from mcpadapt.core import MCPAdapt
-from mcpadapt.smolagents_adapter import SmolAgentsAdapter
+from mcpadapt.core import MCPAdapt  # noqa: F401
 from smolagents import InferenceClientModel
+from smolagents.mcp_client import MCPClient
 
 from config import (
     AGENT_MODEL,
@@ -25,8 +25,7 @@ from src.upgrade_advisor.chat.chat import (
 )
 from src.upgrade_advisor.misc import (
     _monkeypatch_gradio_save_history,
-    get_example_pyproject_question,
-    get_example_requirements_question,
+    get_example_questions,
 )
 from src.upgrade_advisor.theme import christmas
 
@@ -180,12 +179,21 @@ def main():
         # Gradio chat interface state to persist uploaded files
         files_state = gr.State([])
 
-        with MCPAdapt(
-            serverparams=[
+        # with MCPAdapt(
+        #     serverparams=[
+        #         gh_mcp_params,
+        #         upload_mcp_params,
+        #     ],
+        #     adapter=SmolAgentsAdapter(structured_output=True),
+        # ) as toolset:
+        example_questions = get_example_questions(n=4)
+
+        with MCPClient(
+            server_parameters=[
                 gh_mcp_params,
                 upload_mcp_params,
             ],
-            adapter=SmolAgentsAdapter(structured_output=True),
+            structured_output=True,
         ) as toolset:
             logger.info("MCP clients connected successfully")
 
@@ -200,42 +208,30 @@ def main():
             demo = gr.ChatInterface(
                 fn=chat_fn,
                 chatbot=gr.Chatbot(
-                    height=600,
+                    height=800,
                     type="messages",
                 ),
                 title="Package Upgrade Advisor",
                 type="messages",
-                # additional_inputs_accordion="Attach pyproject.toml file",
+                additional_inputs_accordion="""
+                You may attach a pyproject.toml or requirements.txt file to get
+                specific upgrade advice for your project.
+                """,
                 textbox=gr.MultimodalTextbox(
-                    label="pyproject.toml",
-                    file_types=[".toml"],
+                    label="pyproject.toml or requirements.txt file can be attached",
+                    file_types=[".toml", ".txt"],
                     file_count="single",
                     min_width=100,
                     sources="upload",
-                    inputs=files_state,
                 ),
-                # additional_inputs=[files_state],
-                additional_outputs=files_state,
+                additional_inputs=[files_state],
+                additional_outputs=[files_state],
                 save_history=True,
-                examples=[
-                    ["Tell me about the 'requests' package. How to use it with JSON ?"],
-                    [get_example_requirements_question()],
-                    [get_example_pyproject_question()],
-                    ["Which version of 'pandas' is compatible with 'numpy' 2.0?"],
-                    [
-                        {
-                            "text": """Can I upgrade my dependencies from
-                                       the attached pyproject.toml to work with
-                                       python 3.14? Any suggestions on
-                                       potential issues I should be aware of?""",
-                            "files": ["tests/test2.toml"],
-                        }
-                    ],
-                ],
+                examples=example_questions,
                 stop_btn=True,
                 theme=christmas,
             )
-            demo.launch()
+            demo.launch(mcp_server=True, share=False)
 
     finally:
         logger.info("Cleaning up MCP client resources")

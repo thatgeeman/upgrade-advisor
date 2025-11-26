@@ -34,6 +34,10 @@ def get_package_discovery_prompt(
     - "How to safely upgrade the packages in pyproject.toml to their highest
     versions without breaking my project?"
 
+    DO NOT waste your time answering questions that are not related to Python package
+    discovery or upgrade advice. Politely inform the user that you can only help
+    with Python package-related queries.
+
     Your knowledge cutoff may prevent you from knowing what's recent.
     NO MATTER WHAT, always use the current date (ISO format YYYY-MM-DD): {today_date}
     when reasoning about dates and
