@@ -4,7 +4,9 @@ from pathlib import Path
 
 import gradio as gr
 from mcp import StdioServerParameters
-from smolagents import InferenceClientModel, MCPClient
+from mcpadapt.core import MCPAdapt
+from mcpadapt.smolagents_adapter import SmolAgentsAdapter
+from smolagents import InferenceClientModel
 
 from config import (
     AGENT_MODEL,
@@ -128,7 +130,7 @@ async def chat_fn(message, history, persisted_attachments=None):
     }, attachments
 
 
-if __name__ == "__main__":
+def main():
     logger.info("Starting MCP client...")
 
     try:
@@ -161,14 +163,14 @@ if __name__ == "__main__":
             ],
         )
 
-        pypi_mcp_client = MCPClient(
-            server_parameters=[
-                # pypi_mcp_params,
-                gh_mcp_params,
-                upload_mcp_params,
-            ],
-            structured_output=True,
-        )
+        # pypi_mcp_client = MCPClient(
+        #     server_parameters=[
+        #         # pypi_mcp_params,
+        #         gh_mcp_params,
+        #         upload_mcp_params,
+        #     ],
+        #     structured_output=True,
+        # )
 
         model = InferenceClientModel(
             token=HF_TOKEN,
@@ -178,9 +180,16 @@ if __name__ == "__main__":
         # Gradio chat interface state to persist uploaded files
         files_state = gr.State([])
 
-        with pypi_mcp_client as toolset:
+        with MCPAdapt(
+            serverparams=[
+                gh_mcp_params,
+                upload_mcp_params,
+            ],
+            adapter=SmolAgentsAdapter(structured_output=True),
+        ) as toolset:
             logger.info("MCP clients connected successfully")
 
+            global agent
             agent = PackageDiscoveryAgent(
                 model=model,
                 tools=toolset,
@@ -243,3 +252,7 @@ if __name__ == "__main__":
                 except Exception:
                     logger.exception(f"Failed to delete uploaded file: {f}")
         logger.info("Shutdown complete.")
+
+
+if __name__ == "__main__":
+    main()

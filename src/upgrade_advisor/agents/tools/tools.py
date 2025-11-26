@@ -1,6 +1,8 @@
+import asyncio
 import logging
 import shutil
 from pathlib import Path
+from typing import Any
 
 from smolagents.tools import Tool
 
@@ -24,6 +26,55 @@ from .uv_resolver import resolve_environment
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 logger.addHandler(logging.StreamHandler())
+
+
+class AsyncTool(Tool):
+    """A least-effort base class for defining an asynchronous tool.
+
+    Improvements that can be made:
+    - Timeout handling for async tasks.
+    - Cancellation support for long-running tasks.
+    """
+
+    loop = asyncio.get_event_loop()
+    task = None
+
+    async def forward(self) -> Any:
+        raise NotImplementedError(
+            "AsyncTool subclasses must implement the forward method."
+        )
+
+    def async_forward(self, *args, **kwargs) -> Any:
+        self.task = asyncio.create_task(self.forward(*args, **kwargs))
+        try:
+            # call the async forward method and wait for result
+            return self.loop.run_until_complete(self.task)
+        except asyncio.CancelledError as e:
+            logger.error(f"Tool {self.name} execution was cancelled: {e}")
+            raise e
+        except Exception as e:
+            logger.error(f"Error in tool {self.name} execution: {e}")
+            raise e
+        finally:
+            logger.info(f"Tool {self.name} execution completed.")
+
+    def _inspect_args(self):
+        import inspect
+
+        sig = inspect.signature(self.forward)
+        bound = sig.bind_partial()
+        return bound.args, bound.kwargs
+
+    def __call__(self, *args, **kwargs):
+        """Stripped down call method to support async forward calls."""
+        if not self.is_initialized:
+            self.setup()
+        encoded_inputs = self.encode(*args, **kwargs)
+        # call async forward instead of forward
+        # we could aalso just await here, but this way we can have a sync interface
+        outputs = self.async_forward({**encoded_inputs})
+        decoded_outputs = self.decode(outputs)
+        return decoded_outputs
 
 
 class ReadUploadFileTool(Tool):
@@ -180,7 +231,7 @@ class ResolvePyProjectTOMLTool(Tool):
         return result
 
 
-class PypiSearchTool(Tool):
+class PypiSearchTool(AsyncTool):
     """Tool to search PyPI for package metadata."""
 
     name = "pypi_search"
@@ -209,7 +260,7 @@ class PypiSearchTool(Tool):
         return result
 
 
-class PypiSearchVersionTool(Tool):
+class PypiSearchVersionTool(AsyncTool):
     """Tool to search PyPI for specific package version metadata."""
 
     name = "pypi_search_version"
@@ -269,7 +320,7 @@ class RepoFromURLTool(Tool):
         return result
 
 
-class RepoFromPyPITool(Tool):
+class RepoFromPyPITool(AsyncTool):
     """Tool to extract GitHub repository information from a PyPI package."""
 
     name = "repo_from_pypi"
