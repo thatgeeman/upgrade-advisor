@@ -1,8 +1,10 @@
 import logging
+import os
 import shutil
 from pathlib import Path
 
 import gradio as gr
+from huggingface_hub import whoami  # noqa: F401
 from mcp import StdioServerParameters
 from mcpadapt.core import MCPAdapt  # noqa: F401
 from smolagents import InferenceClientModel
@@ -15,7 +17,6 @@ from config import (
     GITHUB_PAT,
     GITHUB_READ_ONLY,
     GITHUB_TOOLSETS,
-    HF_TOKEN,
 )
 from src.upgrade_advisor.agents.package import PackageDiscoveryAgent
 from src.upgrade_advisor.chat.chat import (
@@ -27,7 +28,6 @@ from src.upgrade_advisor.misc import (
     _monkeypatch_gradio_save_history,
     get_example_questions,
 )
-from src.upgrade_advisor.theme import christmas
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -41,10 +41,26 @@ uploads_dir = uploads_dir.resolve()
 _monkeypatch_gradio_save_history()
 
 
-async def chat_fn(message, history, persisted_attachments=None):
+def get_agent_model(model_name: str, oauth_token: gr.OAuthToken = None):
+    token = os.getenv("HF_TOKEN", None) or oauth_token.token if oauth_token else None
+    model = InferenceClientModel(
+        token=token,
+        model_id=model_name,
+    )
+    return model
+
+
+async def chat_fn(
+    message,
+    history,
+    persisted_attachments=None,
+    profile: gr.OAuthProfile = None,
+    oauth_token: gr.OAuthToken = None,
+):
     # parse incoming history is a list of dicts with 'role' and 'content' keys
     from datetime import datetime
 
+    token = os.getenv("HF_TOKEN", None) or oauth_token.token if oauth_token else None
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     logger.info(f"Received message: {message}")
     logger.info(f"History: {history}")
@@ -53,6 +69,7 @@ async def chat_fn(message, history, persisted_attachments=None):
             history,
             turns_cutoff=CHAT_HISTORY_TURNS_CUTOFF,
             word_cutoff=CHAT_HISTORY_WORD_CUTOFF,
+            token=token,
         )
     else:
         summarized_history = ""
@@ -72,7 +89,9 @@ async def chat_fn(message, history, persisted_attachments=None):
     # overwrite messages with the text content only
     message = message.strip()
     rewritten_message, is_rewritten_good = await qn_rewriter(
-        message, summarized_history
+        message,
+        summarized_history,
+        token=token,
     )
 
     if is_rewritten_good:
@@ -113,20 +132,27 @@ async def chat_fn(message, history, persisted_attachments=None):
     logger.info(f"Final message to agent:\n{message}")
     # Run the package discovery agent to build context
     context = agent.discover_package_info(
-        user_input=message, reframed_question=rewritten_message
+        user_input=message,
+        reframed_question=rewritten_message,
     )
     # Build a concise context from tool outputs
     logger.info(f"Built context of length {len(context)}")
     logger.info(f"Context content:\n{context}")
     # Run a document QA pass using the user's question
     qa_answer = await run_document_qa(
-        question=message, context=context, rewritten_question=rewritten_message
+        question=message,
+        context=context,
+        rewritten_question=rewritten_message,
+        token=token,
     )
     logger.info(f"QA answer: {qa_answer}")
-    return {
-        "role": "assistant",
-        "content": qa_answer,
-    }, attachments
+    yield (
+        {
+            "role": "assistant",
+            "content": qa_answer,
+        },
+        attachments,
+    )
 
 
 def main():
@@ -162,32 +188,15 @@ def main():
             ],
         )
 
-        # pypi_mcp_client = MCPClient(
-        #     server_parameters=[
-        #         # pypi_mcp_params,
-        #         gh_mcp_params,
-        #         upload_mcp_params,
-        #     ],
-        #     structured_output=True,
-        # )
-
-        model = InferenceClientModel(
-            token=HF_TOKEN,
-            model_id=AGENT_MODEL,
-        )
-
         # Gradio chat interface state to persist uploaded files
         files_state = gr.State([])
-
-        # with MCPAdapt(
-        #     serverparams=[
-        #         gh_mcp_params,
-        #         upload_mcp_params,
-        #     ],
-        #     adapter=SmolAgentsAdapter(structured_output=True),
-        # ) as toolset:
         example_questions = get_example_questions(n=4)
 
+        # TODO: use the gr.Blocks to add login blocks
+        # Add login with huggingface hub to cache token: https://www.gradio.app/guides/sharing-your-app#o-auth-login-via-hugging-face
+        # use a limited token with read-only access to public repoos only
+        # (GITHUB_PAT)
+        # deploy to hf spaces with mcp server enabled
         with MCPClient(
             server_parameters=[
                 gh_mcp_params,
@@ -198,39 +207,63 @@ def main():
             logger.info("MCP clients connected successfully")
 
             global agent
+            model = get_agent_model(model_name=AGENT_MODEL)
             agent = PackageDiscoveryAgent(
                 model=model,
                 tools=toolset,
             )
-            # link package_agent to the chat function
+            # rewrite with Blocks
+            with gr.Blocks() as demo:
+                gr.LoginButton()
+                gr.Markdown("# 💻 FixMyEnv: Package Upgrade Advisor 🚀🔧🐍📦⚙️")
+                gr.Markdown(
+                    f"""
+                    Welcome to the Package Upgrade Advisor!
+                    This AI-powered assistant helps you identify and resolve
+                    outdated or vulnerable packages in your Python projects.
+                    Simply ask a question about package upgrades, and if you
+                    have a `pyproject.toml` or `requirements.txt` file, feel free
+                    to attach it for more tailored advice.
 
-            # attach files from local machine
-            demo = gr.ChatInterface(
-                fn=chat_fn,
-                chatbot=gr.Chatbot(
-                    height=800,
-                    type="messages",
-                ),
-                title="Package Upgrade Advisor",
-                type="messages",
-                additional_inputs_accordion="""
-                You may attach a pyproject.toml or requirements.txt file to get
-                specific upgrade advice for your project.
-                """,
-                textbox=gr.MultimodalTextbox(
-                    label="pyproject.toml or requirements.txt file can be attached",
-                    file_types=[".toml", ".txt"],
-                    file_count="single",
-                    min_width=100,
-                    sources="upload",
-                ),
-                additional_inputs=[files_state],
-                additional_outputs=[files_state],
-                save_history=True,
-                examples=example_questions,
-                stop_btn=True,
-                theme=christmas,
-            )
+                    ## How to use:
+                    1. Type your question in the chat box below.
+                    2. (Optional) Attach your `pyproject.toml` or `requirements.txt`
+                       file using the upload button. Uploaded files are
+                       immediately removed after the session ends.
+                    3. Click "Submit" and wait for the AI to analyze your query
+                       and provide recommendations.
+
+                    Note: The assistant uses Huggingface Inference API for
+                    [{AGENT_MODEL}](https://huggingface.co/{AGENT_MODEL}) LLM
+                    capabilities with Smolagents Tool calling and GitHub MCP
+                    for package data retrieval. Huggingface login is therefore
+                    required to use the app. This gradio app serves as an MCP Server
+                    as well!
+                    """
+                )
+                gr.ChatInterface(
+                    fn=chat_fn,
+                    chatbot=gr.Chatbot(
+                        height=600,
+                    ),
+                    additional_inputs_accordion="""
+                    You may attach a pyproject.toml or requirements.txt file to get
+                    specific upgrade advice for your project.
+                    """,
+                    textbox=gr.MultimodalTextbox(
+                        label="pyproject.toml or requirements.txt file can be attached",
+                        file_types=[".toml", ".txt"],
+                        file_count="single",
+                        min_width=100,
+                        sources="upload",
+                    ),
+                    additional_inputs=[files_state],
+                    additional_outputs=[files_state],
+                    save_history=True,
+                    examples=example_questions,
+                    stop_btn=True,
+                    # theme=christmas,
+                )
             demo.launch(mcp_server=True, share=False)
 
     finally:

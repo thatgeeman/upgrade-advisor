@@ -28,8 +28,6 @@ logger.setLevel(logging.INFO)
 logger.addHandler(logging.StreamHandler())
 logger.addHandler(logging.FileHandler("package_agent.log"))
 
-# TODO: Fix the async issues with smolagents using mcpadapt
-
 
 class PackageDiscoveryAgent:
     """Agent that discovers metadata about Python packages using MCP tools."""

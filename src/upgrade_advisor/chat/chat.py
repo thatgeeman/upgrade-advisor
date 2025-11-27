@@ -21,10 +21,14 @@ logger.setLevel(logging.INFO)
 logger.addHandler(logging.StreamHandler())
 
 
-async def query(payload):
+async def query(payload, token=None):
     API_URL = "https://router.huggingface.co/v1/chat/completions"
+    token = token or os.environ.get("HF_TOKEN", "")  # use passed token or env var
+    if token is None or token == "":
+        logger.error("No Huggingface token provided for API request.")
+
     headers = {
-        "Authorization": f"Bearer {os.environ['HF_TOKEN']}",
+        "Authorization": f"Bearer {token}",
     }
     try:
         response = requests.post(API_URL, headers=headers, json=payload, timeout=300)
@@ -78,7 +82,7 @@ def extract_answer_content(answer_content: str) -> str:
 
 
 async def run_document_qa(
-    question: str, context: str, rewritten_question: str = None
+    question: str, context: str, rewritten_question: str = None, token: str = None
 ) -> str:
     response = await query(
         {
@@ -93,14 +97,17 @@ async def run_document_qa(
                 },
             ],
             "model": CHAT_MODEL,
-        }
+        },
+        token=token,
     )
 
     answer = parse_response(response)
     return extract_answer_content(answer["content"])
 
 
-async def qn_rewriter_judge(original_question: str, rewritten_question: str) -> str:
+async def qn_rewriter_judge(
+    original_question: str, rewritten_question: str, token: str = None
+) -> str:
     response = await query(
         {
             "messages": [
@@ -112,7 +119,8 @@ async def qn_rewriter_judge(original_question: str, rewritten_question: str) -> 
                 },
             ],
             "model": CHAT_MODEL,
-        }
+        },
+        token=token,
     )
     answer = parse_response(response)
     answer_text = extract_answer_content(answer["content"])
@@ -123,7 +131,9 @@ async def qn_rewriter_judge(original_question: str, rewritten_question: str) -> 
         return False
 
 
-async def qn_rewriter(original_question: str, summarized_history: str = "") -> str:
+async def qn_rewriter(
+    original_question: str, summarized_history: str = "", token: str = None
+) -> str:
     response = await query(
         {
             "messages": [
@@ -135,12 +145,15 @@ async def qn_rewriter(original_question: str, summarized_history: str = "") -> s
                 },
             ],
             "model": CHAT_MODEL,
-        }
+        },
+        token=token,
     )
 
     answer = parse_response(response)
     rewritten_question = extract_answer_content(answer["content"])
-    is_good = await qn_rewriter_judge(original_question, rewritten_question)
+    is_good = await qn_rewriter_judge(
+        original_question, rewritten_question, token=token
+    )
 
     return rewritten_question, is_good
 
@@ -149,6 +162,7 @@ async def summarize_chat_history(
     history: list[dict],
     turns_cutoff=10,
     word_cutoff=100,
+    token: str = None,
 ) -> str:
     # history is a list of dicts with 'role' and 'content' keys
     # [{"role": "user", "content": "..."}, {"role": "assistant", "content":
@@ -176,7 +190,8 @@ async def summarize_chat_history(
                 },
             ],
             "model": CHAT_MODEL,
-        }
+        },
+        token=token,
     )
 
     answer = parse_response(response)

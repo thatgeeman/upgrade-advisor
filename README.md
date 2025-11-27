@@ -1,4 +1,23 @@
+```
+title: FixMyEnv Agent
+emoji: 🐍
+colorFrom: blue
+colorTo: green
+sdk: gradio
+sdk_version: 5.49.1
+app_file: app.py
+pinned: false
+license: mit
+short_description: MCP for Agents that plan your python package upgrade
+hf_oauth: true 
+tags:
+  - building-mcp-track-enterprise
+  - building-mcp-track-customer
+  - mcp-in-action-track-customer
+  - mcp-in-action-track-enterprise
+---
 # Instructions 
+
 1. Create a scoped Personal Access Token from GitHub from https://github.com/settings/personal-access-tokens/new with the following scopes, that allows access for public repositories. 
 2. Store as GITHUB_PAT in a .env file in the root directory of the project.
 

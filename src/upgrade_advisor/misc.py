@@ -147,9 +147,26 @@ def get_example_questions(n: int = 3) -> str:
     ]
     choices = random.sample(all_questions, k=n)
     # format as list of lists for gradio examples
-    choices = [[choice] for choice in choices]
+    choices = [[q] for q in choices]
 
     return choices
+
+
+def to_openai_message_format(role: str, content: str, append_to: list = None) -> dict:
+    message = {
+        "role": role,
+        "content": [
+            {
+                "type": "text",
+                "text": content,
+            }
+        ],
+    }
+    if append_to is not None:
+        # if its supposed to be appended to a list
+        append_to.append(message)
+        return append_to
+    return message
 
 
 def _monkeypatch_gradio_save_history():
