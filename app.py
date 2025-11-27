@@ -4,9 +4,7 @@ import shutil
 from pathlib import Path
 
 import gradio as gr
-from huggingface_hub import whoami  # noqa: F401
 from mcp import StdioServerParameters
-from mcpadapt.core import MCPAdapt  # noqa: F401
 from smolagents import InferenceClientModel
 from smolagents.mcp_client import MCPClient
 
