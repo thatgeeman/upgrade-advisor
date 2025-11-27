@@ -26,6 +26,7 @@ from src.upgrade_advisor.misc import (
     _monkeypatch_gradio_save_history,
     get_example_questions,
 )
+from src.upgrade_advisor.theme import Christmas
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -189,12 +190,11 @@ def main():
         # Gradio chat interface state to persist uploaded files
         files_state = gr.State([])
         example_questions = get_example_questions(n=4)
+        christmas = Christmas()
 
-        # TODO: use the gr.Blocks to add login blocks
-        # Add login with huggingface hub to cache token: https://www.gradio.app/guides/sharing-your-app#o-auth-login-via-hugging-face
-        # use a limited token with read-only access to public repoos only
-        # (GITHUB_PAT)
+        # TODOs:
         # deploy to hf spaces with mcp server enabled
+        # Fix the theme issues (solid background for textbox )
         with MCPClient(
             server_parameters=[
                 gh_mcp_params,
@@ -260,9 +260,8 @@ def main():
                     save_history=True,
                     examples=example_questions,
                     stop_btn=True,
-                    # theme=christmas,
                 )
-            demo.launch(mcp_server=True, share=False)
+            demo.launch(mcp_server=True, share=False, theme=christmas)
 
     finally:
         logger.info("Cleaning up MCP client resources")
