@@ -9,7 +9,7 @@ from mcp import StdioServerParameters
 from smolagents import InferenceClientModel
 from smolagents.mcp_client import MCPClient
 
-from config import (  # noqa: E402
+from upgrade_advisor.config import (  # noqa: E402
     AGENT_MODEL,
     CHAT_HISTORY_TURNS_CUTOFF,
     CHAT_HISTORY_WORD_CUTOFF,
