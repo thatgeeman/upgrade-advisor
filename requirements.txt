@@ -10,3 +10,4 @@ anyio
 pytest-asyncio
 pytest 
 mcp 
+-e .
