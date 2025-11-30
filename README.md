@@ -5,7 +5,7 @@ colorFrom: blue
 colorTo: green
 sdk: gradio
 sdk_version: 6.0.1
-app_file: app.py
+app_file: src/upgrade_advisor/app.py
 pinned: false
 license: mit
 short_description: MCP for Agents that plan your python package upgrade
