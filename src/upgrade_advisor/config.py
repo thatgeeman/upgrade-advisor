@@ -4,8 +4,9 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-AGENT_MODEL = os.getenv("AGENT_MODEL", "Qwen/Qwen3-Next-80B-A3B-Thinking")
-CHAT_MODEL = os.getenv("CHAT_MODEL", "Qwen/Qwen3-Next-80B-A3B-Thinking")
+HF_INFERENCE_PROVIDER= os.getenv("HF_INFERENCE_PROVIDER", "together")
+AGENT_MODEL = os.getenv("AGENT_MODEL", f"Qwen/Qwen3-Next-80B-A3B-Thinking:{HF_INFERENCE_PROVIDER}")
+CHAT_MODEL = os.getenv("CHAT_MODEL", f"Qwen/Qwen3-Next-80B-A3B-Thinking:{HF_INFERENCE_PROVIDER}")
 
 # GitHub MCP configuration
 GITHUB_PAT = os.getenv("GITHUB_PAT", None)
@@ -15,6 +16,7 @@ if not GITHUB_PAT:
 HF_TOKEN = os.getenv("HF_TOKEN", None)
 if not HF_TOKEN:
     print("⚠️ Hugging Face token not found in .env file! Hopefully, the user logs in.")
+
 
 GITHUB_TOOLSETS = os.getenv("GITHUB_TOOLSETS", "repos")
 GITHUB_READ_ONLY = os.getenv("GITHUB_READ_ONLY", "1")
