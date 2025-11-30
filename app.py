@@ -48,6 +48,7 @@ def get_agent_model(model_name: str, oauth_token: gr.OAuthToken = None):
     model = InferenceClientModel( 
         model_id=model_name, 
         token=token,
+        timeout=1000,
     )
     return model
 

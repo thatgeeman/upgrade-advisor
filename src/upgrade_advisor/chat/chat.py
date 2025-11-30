@@ -31,7 +31,7 @@ async def query(payload, token=None):
         "Authorization": f"Bearer {token}",
     }
     try:
-        response = requests.post(API_URL, headers=headers, json=payload, timeout=300)
+        response = requests.post(API_URL, headers=headers, json=payload, timeout=1000)
     except Exception as e:
         logger.error(f"Error during API request: {e}")
         raise e
