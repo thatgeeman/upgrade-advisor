@@ -21,7 +21,13 @@ tags:
 
 # FixMyEnv: Package Upgrade Advisor
 
-An AI-powered Gradio app (and MCP server) that analyzes your Python project, finds outdated or vulnerable dependencies, and recommends upgrades. Attach a `pyproject.toml` or `requirements.txt`, chat with the agent, and it will pull package data via GitHub MCP and run `uv` resolution to suggest safe versions.
+An AI-powered Gradio app (and MCP server) that analyzes your Python project,
+finds outdated or vulnerable dependencies, and recommends upgrades. Attach a
+`pyproject.toml` or `requirements.txt`, chat with the agent, and it will pull
+package data via GitHub MCP and run `uv` resolution to suggest safe versions.
+
+Demo Video: https://www.youtube.com/watch?v=u1-gZqPu0R0 
+Social Post: [LinkedIn](https://www.linkedin.com/posts/thatgeeman_mcp-hackathon-aiagents-activity-7401044891281235968-iSSw)
 
 Demo Video: https://www.youtube.com/watch?v=u1-gZqPu0R0 
 Social Post: [LinkedIn](https://www.linkedin.com/posts/thatgeeman_mcp-hackathon-aiagents-activity-7401044891281235968-iSSw)
