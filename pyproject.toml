@@ -7,20 +7,7 @@ authors = [
 ]
 readme = "README.md"
 requires-python = ">=3.10,<3.15"
-dependencies = [
-    "python-dotenv (>=1.2.1,<2.0.0)",
-    "smolagents[mcp] (>=1.22.0,<2.0.0)",
-    "mcp (>=1.21.1,<2.0.0)",
-    "pytest (>=9.0.1,<10.0.0)",
-    "pytest-asyncio (>=1.3.0,<2.0.0)",
-    "anyio (>=4.11.0,<5.0.0)",
-    "transformers (>=4.57.1,<5.0.0)",
-    "typer[all] (>=0.20.0,<0.21.0)",
-    "gradio[oauth] (>=6.0.1,<7.0.0)",
-    "ddgs (>=9.9.1,<10.0.0)",
-    "uv (>=0.9.11,<0.10.0)",
-    "markdownify (>=1.2.2,<2.0.0)",
-]
+dependencies = []
 
 
 [build-system]
@@ -30,3 +17,21 @@ build-backend = "poetry.core.masonry.api"
 [tool.poetry]
 package-mode = true
 packages = [{ include = "upgrade_advisor", from = "src" }]
+
+[tool.poetry.dependencies]
+python = ">=3.10,<3.15"
+python-dotenv = ">=1.2.1,<2.0.0"
+smolagents = { version = ">=1.22.0,<2.0.0", extras = ["mcp"] }
+mcp = ">=1.21.1,<2.0.0"
+pytest = ">=9.0.1,<10.0.0"
+pytest-asyncio = ">=1.3.0,<2.0.0"
+anyio = ">=4.11.0,<5.0.0"
+transformers = ">=4.57.1,<5.0.0"
+typer = { version = ">=0.20.0,<0.21.0", extras = ["all"] }
+gradio = { version = ">=6.0.1,<7.0.0", extras = ["oauth"] }
+ddgs = ">=9.9.1,<10.0.0"
+uv = ">=0.9.11,<0.10.0"
+markdownify = ">=1.2.2,<2.0.0"
+
+[tool.poetry.dev-dependencies]
+pytest = ">=9.0.1,<10.0.0"
