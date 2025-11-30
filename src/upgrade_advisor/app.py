@@ -194,9 +194,6 @@ def main():
         example_questions = get_example_questions(n=4)
         christmas = Christmas()
 
-        # TODOs:
-        # deploy to hf spaces with mcp server enabled
-        # Fix the theme issues (solid background for textbox )
         with MCPClient(
             server_parameters=[
                 gh_mcp_params,
@@ -215,41 +212,40 @@ def main():
             # rewrite with Blocks
             with gr.Blocks() as demo:
                 gr.LoginButton()
-                gr.Markdown("# 💻 FixMyEnv: Package Upgrade Advisor 🚀🔧🐍📦⚙️")
-                gr.Markdown(
-                    f"""
+                gr.Markdown(f"""
+                    # 💻 FixMyEnv: Package Upgrade Advisor 🚀🔧🐍📦⚙️
+
                     Welcome to the Package Upgrade Advisor!
                     This AI-powered assistant helps you identify and resolve
                     outdated or vulnerable packages in your Python projects.
                     Simply ask a question about package upgrades, and if you
                     have a `pyproject.toml` or `requirements.txt` file, feel free
                     to attach it for more tailored advice.
+                    """, 
+                    container=True,
+                ) 
+                with gr.Accordion("How to Use", open=False):
+                    gr.Markdown(f""" 
+                        1. Type your question in the chat box below.
+                        2. (Optional) Attach your `pyproject.toml` or `requirements.txt`
+                        file using the upload button. Uploaded files are
+                        immediately removed after the session ends.
+                        3. Click "Submit" and wait for the AI to analyze your query
+                        and provide recommendations.
 
-                    ## How to use:
-                    1. Type your question in the chat box below.
-                    2. (Optional) Attach your `pyproject.toml` or `requirements.txt`
-                       file using the upload button. Uploaded files are
-                       immediately removed after the session ends.
-                    3. Click "Submit" and wait for the AI to analyze your query
-                       and provide recommendations.
-
-                    Note: The assistant uses Huggingface Inference API for
-                    [{AGENT_MODEL}](https://huggingface.co/{AGENT_MODEL}) LLM
-                    capabilities with Smolagents Tool calling and GitHub MCP
-                    for package data retrieval. Huggingface login is therefore
-                    required to use the app. This gradio app serves as an MCP Server
-                    as well!
-                    """
-                )
+                        Note: The assistant uses Huggingface Inference API for
+                        [{AGENT_MODEL}](https://huggingface.co/{AGENT_MODEL}) LLM
+                        capabilities with Smolagents Tool calling and GitHub MCP
+                        for package data retrieval. Huggingface login is therefore
+                        required to use the app. This gradio app serves as an MCP Server
+                        as well!
+                        """, 
+                    )
                 gr.ChatInterface(
                     fn=chat_fn,
                     chatbot=gr.Chatbot(
                         height=600,
                     ),
-                    additional_inputs_accordion="""
-                    You may attach a pyproject.toml or requirements.txt file to get
-                    specific upgrade advice for your project.
-                    """,
                     textbox=gr.MultimodalTextbox(
                         label="pyproject.toml or requirements.txt file can be attached",
                         file_types=[".toml", ".txt"],
