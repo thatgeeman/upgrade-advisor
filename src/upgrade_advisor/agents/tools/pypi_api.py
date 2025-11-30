@@ -4,7 +4,7 @@ from typing import Optional
 import requests
 from requests import HTTPError
 
-from upgrade_advisor.schema import (
+from src.upgrade_advisor.schema import (
     ErrorResponseSchema,
     GithubRepoSchema,
     PackageGitHubandReleasesSchema,
