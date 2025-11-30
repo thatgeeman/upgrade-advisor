@@ -10,11 +10,11 @@ CHAT_MODEL = os.getenv("CHAT_MODEL", "Qwen/Qwen3-Next-80B-A3B-Thinking")
 # GitHub MCP configuration
 GITHUB_PAT = os.getenv("GITHUB_PAT", None)
 if not GITHUB_PAT:
-    print("⚠️ GitHub PAT not found in .env file!")
+    print("⚠️ GitHub PAT not found in .env file! Hopefully, the user has set the secret in the environment variables.")
 
 HF_TOKEN = os.getenv("HF_TOKEN", None)
 if not HF_TOKEN:
-    print("⚠️ Hugging Face token not found in .env file!")
+    print("⚠️ Hugging Face token not found in .env file! Hopefully, the user logs in.")
 
 GITHUB_TOOLSETS = os.getenv("GITHUB_TOOLSETS", "repos")
 GITHUB_READ_ONLY = os.getenv("GITHUB_READ_ONLY", "1")

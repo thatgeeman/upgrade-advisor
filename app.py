@@ -258,6 +258,7 @@ def main():
                     save_history=True,
                     examples=example_questions,
                     stop_btn=True,
+                    cache_examples=False,
                 )
             demo.launch(mcp_server=True, share=False, theme=christmas)
 
