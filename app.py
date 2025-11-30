@@ -43,7 +43,7 @@ _monkeypatch_gradio_save_history()
 
 
 def get_agent_model(model_name: str, oauth_token: gr.OAuthToken = None):
-    token = oauth_token.token if oauth_token else None
+    token = os.getenv("HF_TOKEN", None) or oauth_token.token if oauth_token else None
     # provider = os.getenv("HF_INFERENCE_PROVIDER", "together")
     model = InferenceClientModel( 
         model_id=model_name, 

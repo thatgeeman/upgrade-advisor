@@ -11,8 +11,7 @@ license: mit
 short_description: MCP for Agents that plan your python package upgrade
 hf_oauth: true 
 hf_oauth_scopes:
- - read-repos
- - inference-api
+ - read-repos 
 tags:
   - building-mcp-track-enterprise
   - building-mcp-track-customer
