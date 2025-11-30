@@ -5,8 +5,8 @@ from dotenv import load_dotenv
 load_dotenv()
 
 HF_INFERENCE_PROVIDER= os.getenv("HF_INFERENCE_PROVIDER", "together")
-AGENT_MODEL = os.getenv("AGENT_MODEL", f"Qwen/Qwen3-Next-80B-A3B-Thinking:{HF_INFERENCE_PROVIDER}")
-CHAT_MODEL = os.getenv("CHAT_MODEL", f"Qwen/Qwen3-Next-80B-A3B-Thinking:{HF_INFERENCE_PROVIDER}")
+AGENT_MODEL = os.getenv("AGENT_MODEL", f"Qwen/Qwen3-Next-80B-A3B-Thinking")
+CHAT_MODEL = os.getenv("CHAT_MODEL", f"Qwen/Qwen3-Next-80B-A3B-Thinking")
 
 # GitHub MCP configuration
 GITHUB_PAT = os.getenv("GITHUB_PAT", None)
