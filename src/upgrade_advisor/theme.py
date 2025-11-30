@@ -15,7 +15,7 @@ class Christmas(Base):
         neutral_hue: colors.Color | str = colors.stone,
         spacing_size: sizes.Size | str = sizes.spacing_md,
         radius_size: sizes.Size | str = sizes.radius_lg,
-        text_size: sizes.Size | str = sizes.text_lg,
+        text_size: sizes.Size | str = sizes.text_md,
         font: fonts.Font | str | Iterable[fonts.Font | str] = (
             fonts.GoogleFont("Poppins"),
             fonts.GoogleFont("Nunito"),
