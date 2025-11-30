@@ -1,20 +1,13 @@
-[project]
-name = "upgrade-advisor"
-version = "0.1.0"
-description = "An AI-powered GitHub App that suggests dependency upgrades for your repositories."
-authors = [
-    { name = "thatgeeman", email = "thatgeeman@users.noreply.github.com" },
-]
-readme = "README.md"
-requires-python = ">=3.10,<3.15"
-dependencies = []
-
-
 [build-system]
-requires = ["poetry-core>=2.0.0,<3.0.0"]
+requires = ["poetry-core>=1.8.0,<2.0.0"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
+name = "upgrade-advisor"
+version = "0.1.0"
+description = "An AI-powered GitHub App that suggests dependency upgrades for your repositories."
+authors = ["Geevarghese George <thatgeeman@users.noreply.github.com>"]
+readme = "README.md"
 package-mode = true
 packages = [{ include = "upgrade_advisor", from = "src" }]
 
