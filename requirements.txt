@@ -1,1 +1,12 @@
 poetry
+smolagents[mcp]
+gradio[oauth]
+python-dotenv
+markdownify
+uv
+ddgs
+transformers
+anyio
+pytest-asyncio
+pytest 
+mcp 
