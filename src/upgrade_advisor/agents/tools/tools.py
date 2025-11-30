@@ -4,8 +4,8 @@ from pathlib import Path
 
 from smolagents.tools import Tool
 
-from src.upgrade_advisor.const import ALLOWED_OS, UPLOADS_DIR
-from src.upgrade_advisor.schema import (
+from upgrade_advisor.const import ALLOWED_OS, UPLOADS_DIR
+from upgrade_advisor.schema import (
     GithubRepoSchema,
     PackageGitHubandReleasesSchema,
     PackageSearchResponseSchema,

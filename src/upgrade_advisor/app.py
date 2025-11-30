@@ -1,6 +1,7 @@
 import logging
 import os
 import shutil
+import sys
 from pathlib import Path
 
 import gradio as gr
@@ -8,7 +9,7 @@ from mcp import StdioServerParameters
 from smolagents import InferenceClientModel
 from smolagents.mcp_client import MCPClient
 
-from config import (
+from config import (  # noqa: E402
     AGENT_MODEL,
     CHAT_HISTORY_TURNS_CUTOFF,
     CHAT_HISTORY_WORD_CUTOFF,
@@ -17,17 +18,17 @@ from config import (
     GITHUB_TOOLSETS,
 )
 
-from .agents.package import PackageDiscoveryAgent
-from .chat.chat import (
+from upgrade_advisor.agents.package import PackageDiscoveryAgent  # noqa: E402
+from upgrade_advisor.chat.chat import (  # noqa: E402
     qn_rewriter,
     run_document_qa,
     summarize_chat_history,
 )
-from .misc import (
+from upgrade_advisor.misc import (  # noqa: E402
     _monkeypatch_gradio_save_history,
     get_example_questions,
 )
-from .theme import Christmas
+from upgrade_advisor.theme import Christmas  # noqa: E402
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)

@@ -29,4 +29,4 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 package-mode = true
-packages = [{ include = "src/upgrade_advisor" }]
+packages = [{ include = "upgrade_advisor", from = "src" }]

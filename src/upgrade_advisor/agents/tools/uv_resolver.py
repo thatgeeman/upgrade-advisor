@@ -6,9 +6,9 @@ import tempfile
 from contextlib import contextmanager
 from typing import Literal
 
-from src.upgrade_advisor.agents.tools.parse_response import parse_resolved_deps
-from src.upgrade_advisor.const import ALLOWED_OS, UV_VERSION
-from src.upgrade_advisor.schema import (
+from upgrade_advisor.agents.tools.parse_response import parse_resolved_deps
+from upgrade_advisor.const import ALLOWED_OS, UV_VERSION
+from upgrade_advisor.schema import (
     ResolvedDep,
     ResolveResult,
     UVResolutionResultSchema,
