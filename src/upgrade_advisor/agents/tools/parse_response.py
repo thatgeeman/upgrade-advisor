@@ -1,6 +1,6 @@
 import logging
 
-from upgrade_advisor.schema import (
+from src.upgrade_advisor.schema import (
     PackageInfoSchema,
     PackageReleaseSchema,
     PackageSearchResponseSchema,
