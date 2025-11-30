@@ -16,17 +16,18 @@ from config import (
     GITHUB_READ_ONLY,
     GITHUB_TOOLSETS,
 )
-from src.upgrade_advisor.agents.package import PackageDiscoveryAgent
-from src.upgrade_advisor.chat.chat import (
+
+from .agents.package import PackageDiscoveryAgent
+from .chat.chat import (
     qn_rewriter,
     run_document_qa,
     summarize_chat_history,
 )
-from src.upgrade_advisor.misc import (
+from .misc import (
     _monkeypatch_gradio_save_history,
     get_example_questions,
 )
-from src.upgrade_advisor.theme import Christmas
+from .theme import Christmas
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
