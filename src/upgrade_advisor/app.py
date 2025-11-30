@@ -9,7 +9,7 @@ from mcp import StdioServerParameters
 from smolagents import InferenceClientModel
 from smolagents.mcp_client import MCPClient
 
-from upgrade_advisor.config import (  # noqa: E402
+from .config import (  # noqa: E402
     AGENT_MODEL,
     CHAT_HISTORY_TURNS_CUTOFF,
     CHAT_HISTORY_WORD_CUTOFF,
@@ -18,17 +18,17 @@ from upgrade_advisor.config import (  # noqa: E402
     GITHUB_TOOLSETS,
 )
 
-from upgrade_advisor.agents.package import PackageDiscoveryAgent  # noqa: E402
-from upgrade_advisor.chat.chat import (  # noqa: E402
+from .agents.package import PackageDiscoveryAgent  # noqa: E402
+from .chat.chat import (  # noqa: E402
     qn_rewriter,
     run_document_qa,
     summarize_chat_history,
 )
-from upgrade_advisor.misc import (  # noqa: E402
+from .misc import (  # noqa: E402
     _monkeypatch_gradio_save_history,
     get_example_questions,
 )
-from upgrade_advisor.theme import Christmas  # noqa: E402
+from .theme import Christmas  # noqa: E402
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
