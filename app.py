@@ -46,10 +46,10 @@ def get_agent_model(model_name: str, oauth_token: gr.OAuthToken = None):
     token = os.getenv("HF_TOKEN", None) or oauth_token.token if oauth_token else None
     # provider = os.getenv("HF_INFERENCE_PROVIDER", "together")
     model = InferenceClientModel(
-        token=token,
+        # token=token,
         model_id=model_name,
         # provider=provider, 
-        # api_key=token,
+        api_key=token,
     )
     return model
 
