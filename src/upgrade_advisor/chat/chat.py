@@ -4,7 +4,7 @@ import os
 import requests
 from dotenv import load_dotenv
 
-from config import CHAT_MODEL
+from ..config import CHAT_MODEL
 
 from .prompts import (
     chat_summarizer_prompt,
