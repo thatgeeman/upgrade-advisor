@@ -182,8 +182,8 @@ async def summarize_chat_history(
         if isinstance(content, list):
             # content can be a list of type [{'text': ..., 'type':text}, ...]
             # for each text chunk, take only word_cutoff
-            content = ' '.join([get_maybe_truncated(c['text']) for c in content])
-        content = get_maybe_truncated(content)
+            content = ' '.join([get_maybe_truncated(c['text'], word_cutoff=word_cutoff) for c in content])
+        content = get_maybe_truncated(content, word_cutoff=word_cutoff)
         chat_history_text += f"{role.upper()}:\n{content}\n\n"
 
     logger.info(
