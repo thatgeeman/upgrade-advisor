@@ -166,6 +166,7 @@ def main():
             url="https://api.githubcopilot.com/mcp/",
             transport="streamable-http",
             headers={
+                # more here: https://github.com/github/github-mcp-server/blob/main/docs/remote-server.md#optional-headers
                 "Authorization": f"Bearer {GITHUB_PAT}",
                 "X-MCP-Toolsets": GITHUB_TOOLSETS,
                 "X-MCP-Readonly": GITHUB_READ_ONLY,
