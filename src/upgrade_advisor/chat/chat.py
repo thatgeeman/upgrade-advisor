@@ -173,7 +173,8 @@ async def summarize_chat_history(
     for turn in history[-turns_cutoff:]:
         # take only the last `cutoff` turns
         role = turn["role"]
-        content = turn["content"]
+        content = turn["content"]  # content can be a list 
+        logger.info(f'{content}, {type(content)}')
         if len(content.split()) > word_cutoff:
             content = " ".join(content.split()[:word_cutoff]) + " [TRUNCATED]"
         chat_history_text += f"{role.upper()}:\n{content}\n\n"

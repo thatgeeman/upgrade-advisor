@@ -197,11 +197,10 @@ def main():
         example_questions = get_example_questions(n=4)
         christmas = Christmas()
 
+        server_parameters_list = [upload_mcp_params, gh_mcp_params]
+
         with MCPClient(
-            server_parameters=[
-                gh_mcp_params,
-                upload_mcp_params,
-            ],
+            server_parameters=server_parameters_list,
             structured_output=True,
         ) as toolset:
             logger.info("MCP clients connected successfully")
