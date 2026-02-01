@@ -157,6 +157,11 @@ async def qn_rewriter(
 
     return rewritten_question, is_good
 
+def get_maybe_truncated(text, word_cutoff):
+    """Check if the length of words is large and return truncated if necessary"""
+    if len(text.split()) > word_cutoff:
+        text = " ".join(text.split()[:word_cutoff]) + " [TRUNCATED]"
+    return text
 
 async def summarize_chat_history(
     history: list[dict],
@@ -173,10 +178,12 @@ async def summarize_chat_history(
     for turn in history[-turns_cutoff:]:
         # take only the last `cutoff` turns
         role = turn["role"]
-        content = turn["content"]  # content can be a list 
-        logger.info(f'{content}, {type(content)}')
-        if len(content.split()) > word_cutoff:
-            content = " ".join(content.split()[:word_cutoff]) + " [TRUNCATED]"
+        content = turn["content"]  
+        if isinstance(content, list):
+            # content can be a list of type [{'text': ..., 'type':text}, ...]
+            # for each text chunk, take only word_cutoff
+            content = ' '.join([get_maybe_truncated(c['text']) for c in content])
+        content = get_maybe_truncated(content)
         chat_history_text += f"{role.upper()}:\n{content}\n\n"
 
     logger.info(
