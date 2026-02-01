@@ -67,14 +67,17 @@ Social Post: [LinkedIn](https://www.linkedin.com/posts/thatgeeman_mcp-hackathon-
    GITHUB_PAT=ghp_********************************
    HF_TOKEN=hf_***********************************
    # Optional tweaks
-   GITHUB_TOOLSETS="repos"      # or "default,discussions,experiments"
+   GITHUB_TOOLSETS="repos"      # or "default,discussions" 
    GITHUB_READ_ONLY=1
    AGENT_MODEL=Qwen/Qwen3-Next-80B-A3B-Thinking
    HF_INFERENCE_PROVIDER=together
    GRADIO_SERVER_NAME=0.0.0.0
    GRADIO_SERVER_PORT=7860
    ```
-   The app will warn on missing tokens but will not function fully without them.
+   The app will warn on missing tokens but will not function fully without
+   them.
+   As of 2025-12-20 the toolsets from Github MCP are experimental. Please
+   double check for available tools [here](https://github.com/github/github-mcp-server/blob/main/docs/remote-server.md#remote-mcp-toolsets)
 
 ## Run the app
 ```bash
